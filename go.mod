@@ -1,1 +1,1 @@
-module github.com/alexript/jrepack
+module jrepack
