@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"jrepack"
+	"github.com/alexript/jrepack"
 )
 
 var (
