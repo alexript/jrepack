@@ -9,17 +9,17 @@ import (
 	"strings"
 )
 
-type file struct {
+type File struct {
 	Name    string
 	Size    int
 	Hashsum []byte
 }
 
-type folder struct {
+type Folder struct {
 	Name       string
-	Folders    []*folder
-	Files      []*file
-	Containers []*container
+	Folders    []*Folder
+	Files      []*File
+	Containers []*Container
 }
 
 type containerType struct {
@@ -27,8 +27,8 @@ type containerType struct {
 	Extension string
 }
 
-type container struct {
-	Content folder
+type Container struct {
+	Content Folder
 	Type    *containerType
 }
 
@@ -37,14 +37,16 @@ const (
 	jarExt = ".jar"
 )
 
+type Dirinfo map[string][]*File
+
 var (
 	zip            = containerType{Name: "zip file", Extension: zipExt}
 	jar            = containerType{Name: "jar file", Extension: jarExt}
 	containerTypes = []containerType{zip, jar}
-	dirinfo        = make(map[string][]*file)
+	dirinfo        = make(Dirinfo)
 )
 
-func isContainer(filename string) (*containerType, bool) {
+func IsContainer(filename string) (*containerType, bool) {
 	ext := path.Ext(filename)
 	for _, v := range containerTypes {
 		if strings.EqualFold(ext, v.Extension) {
@@ -54,20 +56,28 @@ func isContainer(filename string) (*containerType, bool) {
 	return nil, false
 }
 
-func clearDirinfo() {
-	dirinfo = make(map[string][]*file)
+func ClearDirinfo() {
+	dirinfo = make(Dirinfo)
 }
 
-func addFileToDirinfo(f *file) {
+func GetDirinfo() *Dirinfo {
+	return &dirinfo
+}
+
+func addFileToDirinfo(f *File) bool {
 	key := hex.EncodeToString(f.Hashsum)
 
+	isNewHash := false
+
 	if _, ok := dirinfo[key]; !ok {
-		dirinfo[key] = make([]*file, 0)
+		dirinfo[key] = make([]*File, 0)
+		isNewHash = true
 	}
 	dirinfo[key] = append(dirinfo[key], f)
+	return isNewHash
 }
 
-func newFile(filename string, body []byte) file {
+func NewFile(filename string, body []byte) (File, bool) {
 	l := len(body)
 	bs := []byte(strconv.Itoa(l))
 
@@ -76,38 +86,38 @@ func newFile(filename string, body []byte) file {
 	h.Write(bs) // hash is not just sha256 of file, but sha256 of file size _and_ file data
 	h.Write(body)
 
-	f := file{
+	f := File{
 		Name:    filename,
 		Size:    l,
 		Hashsum: h.Sum(nil),
 	}
 
-	addFileToDirinfo(&f)
+	isNewHash := addFileToDirinfo(&f)
 
-	return f
+	return f, isNewHash
 }
 
-func newFolder(foldername string) folder {
-	return folder{
+func NewFolder(foldername string) Folder {
+	return Folder{
 		Name:       foldername,
-		Folders:    make([]*folder, 0),
-		Files:      make([]*file, 0),
-		Containers: make([]*container, 0),
+		Folders:    make([]*Folder, 0),
+		Files:      make([]*File, 0),
+		Containers: make([]*Container, 0),
 	}
 }
 
-func newContainer(name string) *container {
-	t, ok := isContainer(name)
+func NewContainer(name string) *Container {
+	t, ok := IsContainer(name)
 	if !ok {
 		return nil
 	}
-	return &container{
-		Content: newFolder(name),
+	return &Container{
+		Content: NewFolder(name),
 		Type:    t,
 	}
 }
 
-func addFileToFolder(fold *folder, f *file) error {
+func AddFileToFolder(fold *Folder, f *File) error {
 	if fold == nil {
 		return errors.New("Folder is nil")
 	}
@@ -118,7 +128,7 @@ func addFileToFolder(fold *folder, f *file) error {
 	return nil
 }
 
-func addFolderToFolder(dest *folder, src *folder) error {
+func AddFolderToFolder(dest *Folder, src *Folder) error {
 	if dest == nil {
 		return errors.New("Destination folder is nil")
 	}
@@ -129,7 +139,7 @@ func addFolderToFolder(dest *folder, src *folder) error {
 	return nil
 }
 
-func addContainerToFolder(dest *folder, src *container) error {
+func AddContainerToFolder(dest *Folder, src *Container) error {
 	if dest == nil {
 		return errors.New("Destination folder is nil")
 	}
@@ -140,7 +150,7 @@ func addContainerToFolder(dest *folder, src *container) error {
 	return nil
 }
 
-func addFileToContainer(c *container, f *file) error {
+func AddFileToContainer(c *Container, f *File) error {
 	if c == nil {
 		return errors.New("Container is nil")
 	}
@@ -152,7 +162,7 @@ func addFileToContainer(c *container, f *file) error {
 	return nil
 }
 
-func addFolderToContainer(c *container, src *folder) error {
+func AddFolderToContainer(c *Container, src *Folder) error {
 	if c == nil {
 		return errors.New("Container is nil")
 	}
@@ -163,7 +173,7 @@ func addFolderToContainer(c *container, src *folder) error {
 	return nil
 }
 
-func addContainerToContainer(dest *container, src *container) error {
+func AddContainerToContainer(dest *Container, src *Container) error {
 	if dest == nil {
 		return errors.New("Destination container is nil")
 	}

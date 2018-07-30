@@ -33,7 +33,7 @@ var containerTypesTests = []struct {
 func TestIsContainer(t *testing.T) {
 	for _, tt := range containerTypesTests {
 		t.Run(tt.name, func(t *testing.T) {
-			ct, result := isContainer(tt.name)
+			ct, result := IsContainer(tt.name)
 			if tt.expected != result {
 				t.Errorf("Result: %v, Expected: %v", result, tt.expected)
 			}
@@ -68,7 +68,7 @@ func TestNewFile(t *testing.T) {
 	expectedBody := fromHex(expectedHexString)
 	expectedLength := len(expectedBody)
 	expectedHash := "55b88037ec60704aa5dc318200f6998afb24b31d1a7b1d3f5d2263472ea73f70"
-	f := newFile(expectedName, expectedBody)
+	f, _ := NewFile(expectedName, expectedBody)
 	if expectedName != f.Name {
 		t.Errorf("Result: '%v', expected: '%v'", f.Name, expectedName)
 	}
@@ -84,7 +84,7 @@ func TestNewFile(t *testing.T) {
 func TestNewFolder(t *testing.T) {
 	expectedName := "test"
 	expectedZeroNum := 0
-	f := newFolder(expectedName)
+	f := NewFolder(expectedName)
 	if f.Name != expectedName {
 		t.Errorf("Result: '%v', expected: '%v'", f.Name, expectedName)
 	}
@@ -103,18 +103,18 @@ func TestNewFolder(t *testing.T) {
 }
 
 func TestNewContainer(t *testing.T) {
-	c := newContainer("test")
+	c := NewContainer("test")
 	if c != nil {
 		t.Error("Accepted not container name")
 	}
 
-	c = newContainer("test.zip")
+	c = NewContainer("test.zip")
 	if c == nil {
 		t.Error("ZIP container is not accepted")
 	}
 
 	expectedName := "test.jar"
-	c = newContainer(expectedName)
+	c = NewContainer(expectedName)
 	if c == nil {
 		t.Error("JAR container is not accepted")
 	}
@@ -127,24 +127,24 @@ func TestNewContainer(t *testing.T) {
 func TestAddFileToFolder(t *testing.T) {
 	expectedHexString := "010203040506"
 	expectedBody := fromHex(expectedHexString)
-	err := addFileToFolder(nil, nil)
+	err := AddFileToFolder(nil, nil)
 	if err == nil {
 		t.Error("Nil folder and Nil file are accepted")
 	}
 
-	f := newFile("test", expectedBody)
-	err = addFileToFolder(nil, &f)
+	f, _ := NewFile("test", expectedBody)
+	err = AddFileToFolder(nil, &f)
 	if err == nil {
 		t.Error("Nil folder are accepted")
 	}
 
-	fold := newFolder("test")
-	err = addFileToFolder(&fold, nil)
+	fold := NewFolder("test")
+	err = AddFileToFolder(&fold, nil)
 	if err == nil {
 		t.Error("Nil file are accepted")
 	}
 
-	err = addFileToFolder(&fold, &f)
+	err = AddFileToFolder(&fold, &f)
 	if err != nil {
 		t.Error("Unable to append file to folder")
 	}
@@ -158,24 +158,24 @@ func TestAddFileToFolder(t *testing.T) {
 
 func TestAddFolderToFolder(t *testing.T) {
 
-	err := addFolderToFolder(nil, nil)
+	err := AddFolderToFolder(nil, nil)
 	if err == nil {
 		t.Error("Nil folder and Nil folder are accepted")
 	}
 
-	src := newFolder("test")
-	err = addFolderToFolder(nil, &src)
+	src := NewFolder("test")
+	err = AddFolderToFolder(nil, &src)
 	if err == nil {
 		t.Error("Nil destination folder are accepted")
 	}
 
-	dest := newFolder("test")
-	err = addFolderToFolder(&dest, nil)
+	dest := NewFolder("test")
+	err = AddFolderToFolder(&dest, nil)
 	if err == nil {
 		t.Error("Nil source folder are accepted")
 	}
 
-	err = addFolderToFolder(&dest, &src)
+	err = AddFolderToFolder(&dest, &src)
 	if err != nil {
 		t.Error("Unable to append fodler to folder")
 	}
@@ -189,24 +189,24 @@ func TestAddFolderToFolder(t *testing.T) {
 
 func TestAddContainerToFolder(t *testing.T) {
 
-	err := addContainerToFolder(nil, nil)
+	err := AddContainerToFolder(nil, nil)
 	if err == nil {
 		t.Error("Nil folder and Nil container are accepted")
 	}
 
-	dest := newFolder("test")
-	err = addContainerToFolder(&dest, nil)
+	dest := NewFolder("test")
+	err = AddContainerToFolder(&dest, nil)
 	if err == nil {
 		t.Error("Nil container are accepted")
 	}
 
-	c := newContainer("test.zip")
-	err = addContainerToFolder(nil, c)
+	c := NewContainer("test.zip")
+	err = AddContainerToFolder(nil, c)
 	if err == nil {
 		t.Error("Nil destination folder are accepted")
 	}
 
-	err = addContainerToFolder(&dest, c)
+	err = AddContainerToFolder(&dest, c)
 	if err != nil {
 		t.Error("Unable to append container to folder")
 	}
@@ -221,24 +221,24 @@ func TestAddContainerToFolder(t *testing.T) {
 func TestAddFileToContainer(t *testing.T) {
 	expectedHexString := "010203040506"
 	expectedBody := fromHex(expectedHexString)
-	err := addFileToContainer(nil, nil)
+	err := AddFileToContainer(nil, nil)
 	if err == nil {
 		t.Error("Nil container and Nil file are accepted")
 	}
 
-	f := newFile("test", expectedBody)
-	err = addFileToContainer(nil, &f)
+	f, _ := NewFile("test", expectedBody)
+	err = AddFileToContainer(nil, &f)
 	if err == nil {
 		t.Error("Nil container are accepted")
 	}
 
-	c := newContainer("test.zip")
-	err = addFileToContainer(c, nil)
+	c := NewContainer("test.zip")
+	err = AddFileToContainer(c, nil)
 	if err == nil {
 		t.Error("Nil file are accepted")
 	}
 
-	err = addFileToContainer(c, &f)
+	err = AddFileToContainer(c, &f)
 	if err != nil {
 		t.Error("Unable to append file to container")
 	}
@@ -252,24 +252,24 @@ func TestAddFileToContainer(t *testing.T) {
 
 func TestAddFolderToContainer(t *testing.T) {
 
-	err := addFolderToContainer(nil, nil)
+	err := AddFolderToContainer(nil, nil)
 	if err == nil {
 		t.Error("Nil container and Nil folder are accepted")
 	}
 
-	src := newFolder("test")
-	err = addFolderToContainer(nil, &src)
+	src := NewFolder("test")
+	err = AddFolderToContainer(nil, &src)
 	if err == nil {
 		t.Error("Nil contaienr are accepted")
 	}
 
-	c := newContainer("test.zip")
-	err = addFolderToContainer(c, nil)
+	c := NewContainer("test.zip")
+	err = AddFolderToContainer(c, nil)
 	if err == nil {
 		t.Error("Nil folder are accepted")
 	}
 
-	err = addFolderToContainer(c, &src)
+	err = AddFolderToContainer(c, &src)
 	if err != nil {
 		t.Error("Unable to append fodler to container")
 	}
@@ -283,24 +283,24 @@ func TestAddFolderToContainer(t *testing.T) {
 
 func TestAddContainerToContainer(t *testing.T) {
 
-	err := addContainerToContainer(nil, nil)
+	err := AddContainerToContainer(nil, nil)
 	if err == nil {
 		t.Error("Nil container and Nil container are accepted")
 	}
 
-	dest := newContainer("test.zip")
-	err = addContainerToContainer(dest, nil)
+	dest := NewContainer("test.zip")
+	err = AddContainerToContainer(dest, nil)
 	if err == nil {
 		t.Error("Nil source container are accepted")
 	}
 
-	c := newContainer("test.zip")
-	err = addContainerToContainer(nil, c)
+	c := NewContainer("test.zip")
+	err = AddContainerToContainer(nil, c)
 	if err == nil {
 		t.Error("Nil destination container are accepted")
 	}
 
-	err = addContainerToContainer(dest, c)
+	err = AddContainerToContainer(dest, c)
 	if err != nil {
 		t.Error("Unable to append container to container")
 	}
@@ -335,46 +335,78 @@ func TestAddFileToDirinfo(t *testing.T) {
 	expectedBody4 := fromHex(expectedHexString4)
 
 	// dummy folder to collect files
-	fold := newFolder("dummy")
+	fold := NewFolder("dummy")
 
-	clearDirinfo()
+	ClearDirinfo()
 	currentLen := len(dirinfo)
 	if currentLen > 0 {
 		t.Error("Unable to cleanup the dirinfo")
 	}
 
-	f1 := newFile(expectedName1, expectedBody1)
-	addFileToFolder(&fold, &f1)
+	f1, isNewHash1 := NewFile(expectedName1, expectedBody1)
+	AddFileToFolder(&fold, &f1)
 	currentLen = len(dirinfo)
-	if currentLen != 1 {
+	if currentLen != 1 || !isNewHash1 {
 		t.Error("Unable to add file into empty dirinfo")
 	}
 
-	f2 := newFile(expectedName1, expectedBody1)
-	addFileToFolder(&fold, &f2)
+	f2, isNewHash2 := NewFile(expectedName1, expectedBody1)
+	AddFileToFolder(&fold, &f2)
 	currentLen = len(dirinfo)
-	if currentLen != 1 {
+	if currentLen != 1 || isNewHash2 {
 		t.Error("Different key is produced for the same file")
 	}
 
-	f3 := newFile(expectedName2, expectedBody2)
-	addFileToFolder(&fold, &f3)
+	f3, isNewHash3 := NewFile(expectedName2, expectedBody2)
+	AddFileToFolder(&fold, &f3)
 	currentLen = len(dirinfo)
-	if currentLen != 1 {
+	if currentLen != 1 || isNewHash3 {
 		t.Error("Same file content but different name failed")
 	}
 
-	f4 := newFile(expectedName3, expectedBody3)
-	addFileToFolder(&fold, &f4)
+	f4, isNewHash4 := NewFile(expectedName3, expectedBody3)
+	AddFileToFolder(&fold, &f4)
 	currentLen = len(dirinfo)
-	if currentLen != 2 {
+	if currentLen != 2 || !isNewHash4 {
 		t.Error("Different content not separated")
 	}
 
-	f5 := newFile(expectedName4, expectedBody4)
-	addFileToFolder(&fold, &f5)
+	f5, isNewHash5 := NewFile(expectedName4, expectedBody4)
+	AddFileToFolder(&fold, &f5)
 	currentLen = len(dirinfo)
-	if currentLen != 3 {
+	if currentLen != 3 || !isNewHash5 {
 		t.Error("Totally different file not separated")
 	}
+}
+
+func TestAddFoldersAndFilesToFolder(T *testing.T) {
+	testCase := "f1/f2/file.txt"
+	hexString := "010203040506"
+	body := fromHex(hexString)
+	parent := NewFolder("test")
+	file, _ := NewFile(testCase, body)
+	AddFileToFolder(&parent, &file)
+
+	level1 := parent.Folders
+	if len(level1) != 1 {
+		T.Fatal("f1 folder is not created")
+	}
+
+	f1 := level1[0]
+	level2 := f1.Folders
+	if len(level2) != 1 {
+		T.Fatal("f2 folder is not created")
+	}
+
+	f2 := level2[0]
+	files := f2.Files
+	if len(files) != 1 {
+		T.Fatal("file.txt is not created")
+	}
+
+	f := files[0]
+	if f.Name != "file.txt" {
+		T.Error("file name is not trimmed")
+	}
+
 }
