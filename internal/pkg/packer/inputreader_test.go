@@ -35,10 +35,14 @@ func TestReadInputNotFolder(T *testing.T) {
 func TestReadSimplefolder(T *testing.T) {
 
 	inputFolder := `../../../test/testdata/simplefolder`
-	dirinfo, _, err := readInputFolder(inputFolder)
+	dirinfo, rootFolder, err := readInputFolder(inputFolder)
 	if err != nil || dirinfo == nil {
 		T.Errorf("Unable to read test data from %v", inputFolder)
 	}
+
+	T.Logf("Dirinfo: %v", dirinfo)
+
+	T.Logf("Root folder: %v", rootFolder)
 
 	resultDirinfoLength := len(*dirinfo)
 	if resultDirinfoLength != 1 {
@@ -49,12 +53,13 @@ func TestReadSimplefolder(T *testing.T) {
 func TestReadSimplecontainer(T *testing.T) {
 
 	inputFolder := `../../../test/testdata/simplecontainer`
-	dirinfo, rootFodler, err := readInputFolder(inputFolder)
+	dirinfo, rootFolder, err := readInputFolder(inputFolder)
 	if err != nil || dirinfo == nil {
 		T.Errorf("Unable to read test data from %v", inputFolder)
 	}
 
-	T.Errorf("Root folder: %v", *rootFodler)
+	T.Logf("Dirinfo: %v", dirinfo)
+	T.Logf("Root folder: %v", rootFolder)
 
 	resultDirinfoLength := len(*dirinfo)
 	if resultDirinfoLength != 1 {

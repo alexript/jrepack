@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"testing"
 )
 
@@ -133,7 +134,7 @@ func TestAddFileToFolder(t *testing.T) {
 	}
 
 	f, _ := NewFile("test", expectedBody)
-	err = AddFileToFolder(nil, &f)
+	err = AddFileToFolder(nil, f)
 	if err == nil {
 		t.Error("Nil folder are accepted")
 	}
@@ -144,7 +145,7 @@ func TestAddFileToFolder(t *testing.T) {
 		t.Error("Nil file are accepted")
 	}
 
-	err = AddFileToFolder(&fold, &f)
+	err = AddFileToFolder(&fold, f)
 	if err != nil {
 		t.Error("Unable to append file to folder")
 	}
@@ -227,7 +228,7 @@ func TestAddFileToContainer(t *testing.T) {
 	}
 
 	f, _ := NewFile("test", expectedBody)
-	err = AddFileToContainer(nil, &f)
+	err = AddFileToContainer(nil, f)
 	if err == nil {
 		t.Error("Nil container are accepted")
 	}
@@ -238,7 +239,7 @@ func TestAddFileToContainer(t *testing.T) {
 		t.Error("Nil file are accepted")
 	}
 
-	err = AddFileToContainer(c, &f)
+	err = AddFileToContainer(c, f)
 	if err != nil {
 		t.Error("Unable to append file to container")
 	}
@@ -344,39 +345,119 @@ func TestAddFileToDirinfo(t *testing.T) {
 	}
 
 	f1, isNewHash1 := NewFile(expectedName1, expectedBody1)
-	AddFileToFolder(&fold, &f1)
+	AddFileToFolder(&fold, f1)
 	currentLen = len(dirinfo)
 	if currentLen != 1 || !isNewHash1 {
 		t.Error("Unable to add file into empty dirinfo")
 	}
 
 	f2, isNewHash2 := NewFile(expectedName1, expectedBody1)
-	AddFileToFolder(&fold, &f2)
+	AddFileToFolder(&fold, f2)
 	currentLen = len(dirinfo)
 	if currentLen != 1 || isNewHash2 {
 		t.Error("Different key is produced for the same file")
 	}
 
 	f3, isNewHash3 := NewFile(expectedName2, expectedBody2)
-	AddFileToFolder(&fold, &f3)
+	AddFileToFolder(&fold, f3)
 	currentLen = len(dirinfo)
 	if currentLen != 1 || isNewHash3 {
 		t.Error("Same file content but different name failed")
 	}
 
 	f4, isNewHash4 := NewFile(expectedName3, expectedBody3)
-	AddFileToFolder(&fold, &f4)
+	AddFileToFolder(&fold, f4)
 	currentLen = len(dirinfo)
 	if currentLen != 2 || !isNewHash4 {
 		t.Error("Different content not separated")
 	}
 
 	f5, isNewHash5 := NewFile(expectedName4, expectedBody4)
-	AddFileToFolder(&fold, &f5)
+	AddFileToFolder(&fold, f5)
 	currentLen = len(dirinfo)
 	if currentLen != 3 || !isNewHash5 {
 		t.Error("Totally different file not separated")
 	}
+}
+
+func TestHasFolder(T *testing.T) {
+	parent := NewFolder("parent")
+	child := NewFolder("child")
+	AddFolderToFolder(&parent, &child)
+
+	f, err := (&parent).HasFolder("child")
+	if err != nil {
+		T.Error(err)
+	}
+	if f == nil {
+		T.Fatal("Unable to find existing folder")
+	}
+	if f.Name != "child" {
+		T.Error("Unexpected child name " + f.Name)
+	}
+
+	f, err = (&parent).HasFolder("nonexisted")
+	if err != nil {
+		T.Error(err)
+	}
+	if f != nil {
+		T.Error("found not existed child")
+	}
+
+}
+
+func TestMkdirAll(T *testing.T) {
+	path := "/f1/f2"
+	root := NewFolder("root")
+	result, err := MkdirAll(&root, path)
+	if err != nil {
+		T.Fatal(err)
+	}
+	if result.Name != "f2" {
+		T.Error("Result is not f2 but " + result.Name)
+	}
+
+	f1level := root.Folders
+	if len(f1level) != 1 {
+		T.Fatal("Not exacly one folder on f1 level")
+	}
+
+	f1 := f1level[0]
+	f1name := f1.Name
+	if f1name != "f1" {
+		T.Error("f1 folder is " + f1name)
+	}
+
+	f2level := f1.Folders
+	if len(f2level) != 1 {
+		T.Fatal("Not exactly one folder on f2 level")
+	}
+	f2 := f2level[0]
+	f2name := f2.Name
+	if f2name != "f2" {
+		T.Error("f2 folder have wrong name " + f2name)
+	}
+
+	// repeate
+
+	result, err = MkdirAll(&root, path)
+	if err != nil {
+		T.Fatal(err)
+	}
+
+	f1level = root.Folders
+	if len(f1level) != 1 {
+		T.Fatal("Not exacly one folder on f1 level")
+	}
+
+	f1 = f1level[0]
+
+	f2level = f1.Folders
+	if len(f2level) != 1 {
+		T.Fatal("Not exactly one folder on f2 level")
+	}
+	dump, _ := json.MarshalIndent(root, "// ", "   ")
+	T.Logf("Root folder: %s", dump)
 }
 
 func TestAddFoldersAndFilesToFolder(T *testing.T) {
@@ -385,7 +466,7 @@ func TestAddFoldersAndFilesToFolder(T *testing.T) {
 	body := fromHex(hexString)
 	parent := NewFolder("test")
 	file, _ := NewFile(testCase, body)
-	AddFileToFolder(&parent, &file)
+	AddFileToFolder(&parent, file)
 
 	level1 := parent.Folders
 	if len(level1) != 1 {
@@ -409,4 +490,6 @@ func TestAddFoldersAndFilesToFolder(T *testing.T) {
 		T.Error("file name is not trimmed")
 	}
 
+	dump, _ := json.MarshalIndent(parent, "// ", "   ")
+	T.Logf("Root folder: %s", dump)
 }

@@ -61,7 +61,7 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 			_, isContainer := common.IsContainer(fullname)
 
 			if isContainer {
-				container := common.NewContainer(fullname)
+				container := common.NewContainer(name)
 				err := readContainer(container, fullname)
 				if err != nil {
 					return err
@@ -74,7 +74,7 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 					return err
 				}
 				file, isNewHash := common.NewFile(name, fileData)
-				common.AddFileToFolder(parent, &file)
+				common.AddFileToFolder(parent, file)
 				if isNewHash {
 					compress(fileData)
 				}
@@ -99,12 +99,12 @@ func readContainer(container *common.Container, filename string) error {
 			panic(err)
 		}
 	}()
-	log, err := os.Create("ttt")
-	defer log.Close()
+	//	log, err := os.Create("ttt")
+	//	defer log.Close()
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extractAndWriteFile := func(f *zip.File) error {
 
-		log.WriteString(f.Name + "\n")
+		//		log.WriteString(f.Name + "\n")
 
 		rc, err := f.Open()
 		if err != nil {
@@ -134,7 +134,7 @@ func readContainer(container *common.Container, filename string) error {
 					return err
 				}
 				file, isNewHash := common.NewFile(f.Name, b.Bytes())
-				common.AddFileToContainer(container, &file)
+				common.AddFileToContainer(container, file)
 				if isNewHash {
 					compress(b.Bytes())
 				}
