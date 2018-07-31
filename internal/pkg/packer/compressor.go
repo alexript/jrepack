@@ -2,11 +2,15 @@ package packer
 
 import (
 	"errors"
+	"io"
 	"os"
+
+	"github.com/itchio/lzma"
 )
 
 type Output struct {
-	File *os.File
+	File   *os.File
+	Writer io.WriteCloser
 }
 
 var (
@@ -22,8 +26,12 @@ func openOutput(filename string) (*Output, error) {
 		o = nil
 		return nil, err
 	}
+
+	w := lzma.NewWriterLevel(output, 8)
+
 	o = &Output{
-		File: output,
+		File:   output,
+		Writer: w,
 	}
 	return o, nil
 
@@ -31,12 +39,13 @@ func openOutput(filename string) (*Output, error) {
 
 func compress(data []byte) {
 	if o != nil {
-		o.File.Write(data)
+		o.Writer.Write(data)
 	}
 }
 
 func closeOutput() {
 	if o != nil {
+		o.Writer.Close()
 		o.File.Close()
 		o = nil
 	}
