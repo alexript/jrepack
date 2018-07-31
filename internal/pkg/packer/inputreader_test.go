@@ -66,3 +66,20 @@ func TestReadSimplecontainer(T *testing.T) {
 		T.Errorf("Expected only 1 record in dirinfo. Result: %v", resultDirinfoLength)
 	}
 }
+
+func TestReadNestedcontainer(T *testing.T) {
+
+	inputFolder := `../../../test/testdata/nestedcontainer`
+	dirinfo, rootFolder, err := readInputFolder(inputFolder)
+	if err != nil || dirinfo == nil {
+		T.Errorf("Unable to read test data from %v", inputFolder)
+	}
+
+	T.Logf("Dirinfo: %v", dirinfo)
+	T.Logf("Root folder: %v", rootFolder)
+
+	resultDirinfoLength := len(*dirinfo)
+	if resultDirinfoLength != 1 {
+		T.Errorf("Expected only 1 record in dirinfo. Result: %v", resultDirinfoLength)
+	}
+}

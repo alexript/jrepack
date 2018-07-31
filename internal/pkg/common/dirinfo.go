@@ -52,6 +52,11 @@ func (f Folder) String() string {
 	return fmt.Sprintf("\nFolder:\n%s\n", dump)
 }
 
+func (c Container) String() string {
+	dump, _ := json.MarshalIndent(c, "", "   ")
+	return fmt.Sprintf("\nContainer:\n%s\n", dump)
+}
+
 var (
 	zip            = containerType{Name: "zip file", Extension: zipExt}
 	jar            = containerType{Name: "jar file", Extension: jarExt}
@@ -326,7 +331,20 @@ func AddContainerToContainer(dest *Container, src *Container) error {
 	if src == nil {
 		return errors.New("Source container is nil")
 	}
-	dest.Content.Containers = append(dest.Content.Containers, src)
+
+	dirname := path.Dir(src.Content.Name)
+
+	target := &(dest.Content)
+
+	if dirname != "." {
+		t, err := MkdirAll(target, dirname)
+		if err != nil {
+			return err
+		}
+		target = t
+		src.Content.Name = path.Base(src.Content.Name)
+	}
+	target.Containers = append(target.Containers, src)
 
 	return nil
 }

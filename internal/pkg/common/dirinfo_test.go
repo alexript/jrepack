@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/hex"
 	"encoding/json"
+
 	"testing"
 )
 
@@ -296,20 +297,26 @@ func TestAddContainerToContainer(t *testing.T) {
 	}
 
 	c := NewContainer("test.zip")
+
 	err = AddContainerToContainer(nil, c)
+
 	if err == nil {
 		t.Error("Nil destination container are accepted")
 	}
 
 	err = AddContainerToContainer(dest, c)
+
 	if err != nil {
-		t.Error("Unable to append container to container")
+		t.Errorf("Unable to append container to container %v", dest)
 	}
 
 	expectedSize := 1
 	resultSize := len(dest.Content.Containers)
 	if expectedSize != resultSize {
-		t.Errorf("Expected %v containers in container. Result: %v", expectedSize, resultSize)
+		t.Errorf("Expected %v containers in container. Result: %v \n", expectedSize, resultSize)
+		t.Errorf("Dest: %v", dest)
+		t.Errorf("Src: %v", c)
+
 	}
 }
 

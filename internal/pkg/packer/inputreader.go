@@ -85,10 +85,6 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 	return nil
 }
 
-func compress([]byte) {
-
-}
-
 func readContainer(container *common.Container, filename string) error {
 	r, err := zip.OpenReader(filename)
 	if err != nil {
@@ -125,6 +121,28 @@ func readContainer(container *common.Container, filename string) error {
 		} else {
 			_, isContainer := common.IsContainer(f.Name)
 			if isContainer {
+				file, err := ioutil.TempFile(os.TempDir(), "jrepacktmp")
+				defer os.Remove(file.Name())
+
+				_, err = io.Copy(file, rc)
+
+				if err != nil {
+					return err
+				}
+
+				if err := file.Close(); err != nil {
+					return err
+				}
+
+				newcontainer := common.NewContainer(f.Name)
+				err = readContainer(newcontainer, file.Name())
+				if err != nil {
+					return err
+				}
+				err = common.AddContainerToContainer(container, newcontainer)
+				if err != nil {
+					return err
+				}
 
 			} else {
 				var b bytes.Buffer
