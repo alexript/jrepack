@@ -40,6 +40,7 @@ const (
 	jarExt = ".jar"
 )
 
+type Offset map[int][]byte
 type Dirinfo map[string][]*File
 
 func (di Dirinfo) String() string {
@@ -57,11 +58,17 @@ func (c Container) String() string {
 	return fmt.Sprintf("\nContainer:\n%s\n", dump)
 }
 
+func (o Offset) String() string {
+	dump, _ := json.MarshalIndent(o, "", "   ")
+	return fmt.Sprintf("\nOffsets table:\n%s\n", dump)
+}
+
 var (
 	zip            = containerType{Name: "zip file", Extension: zipExt}
 	jar            = containerType{Name: "jar file", Extension: jarExt}
 	containerTypes = []containerType{zip, jar}
 	dirinfo        = make(Dirinfo)
+	offsets        = make(Offset)
 )
 
 func IsContainer(filename string) (*containerType, bool) {
@@ -76,10 +83,19 @@ func IsContainer(filename string) (*containerType, bool) {
 
 func ClearDirinfo() {
 	dirinfo = make(Dirinfo)
+	offsets = make(Offset)
 }
 
 func GetDirinfo() *Dirinfo {
 	return &dirinfo
+}
+
+func GetOffsets() *Offset {
+	return &offsets
+}
+
+func SetOffset(offset int, hash []byte) {
+	offsets[offset] = hash
 }
 
 func addFileToDirinfo(f *File) bool {

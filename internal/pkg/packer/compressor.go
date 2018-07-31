@@ -9,8 +9,9 @@ import (
 )
 
 type Output struct {
-	File   *os.File
-	Writer io.WriteCloser
+	File        *os.File
+	Writer      io.WriteCloser
+	TailPointer int
 }
 
 var (
@@ -30,17 +31,24 @@ func openOutput(filename string) (*Output, error) {
 	w := lzma.NewWriterLevel(output, 8)
 
 	o = &Output{
-		File:   output,
-		Writer: w,
+		File:        output,
+		Writer:      w,
+		TailPointer: 0,
 	}
 	return o, nil
 
 }
 
-func compress(data []byte) {
+func compress(data []byte) (int, int, error) {
 	if o != nil {
-		o.Writer.Write(data)
+		offset := o.TailPointer
+		n, err := o.Writer.Write(data)
+		if err != nil {
+			o.TailPointer += n
+		}
+		return offset, n, err
 	}
+	return -1, 0, nil
 }
 
 func closeOutput() {

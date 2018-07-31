@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	common "github.com/alexript/jrepack/internal/pkg/common"
 	"github.com/itchio/lzma"
 )
 
@@ -21,6 +22,8 @@ func TestSimplecompress(T *testing.T) {
 	if err != nil {
 		T.Fatal(err)
 	}
+
+	T.Logf("Offsets table: %v", common.GetOffsets())
 
 	f, err := os.Open(filename)
 	defer f.Close()

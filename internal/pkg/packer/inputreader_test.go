@@ -41,7 +41,6 @@ func TestReadSimplefolder(T *testing.T) {
 	}
 
 	T.Logf("Dirinfo: %v", dirinfo)
-
 	T.Logf("Root folder: %v", rootFolder)
 
 	resultDirinfoLength := len(*dirinfo)

@@ -1,6 +1,12 @@
 package packer
 
-func Pack(inputFolder, outputFile, workFolder string) error {
-	readInputFolder(inputFolder)
-	return nil
+func Pack(inputFolder, outputFile string) error {
+	_, err := openOutput(outputFile)
+	defer closeOutput()
+	if err != nil {
+		return err
+	}
+	_, _, err = readInputFolder(inputFolder)
+
+	return err
 }

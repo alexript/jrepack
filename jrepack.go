@@ -5,10 +5,10 @@ import (
 	"github.com/alexript/jrepack/internal/pkg/unpacker"
 )
 
-func Pack(inputFolder, outputFile, workFolder string) error {
-	return packer.Pack(inputFolder, outputFile, workFolder)
+func Pack(inputFolder, outputFile string) error {
+	return packer.Pack(inputFolder, outputFile)
 }
 
-func UnPack(inputFile, outputFolder, workFolder string) error {
-	return unpacker.UnPack(inputFile, outputFolder, workFolder)
+func UnPack(inputFile, outputFolder string) error {
+	return unpacker.UnPack(inputFile, outputFolder)
 }
