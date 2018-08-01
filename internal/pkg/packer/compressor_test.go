@@ -1,11 +1,10 @@
 package packer
 
 import (
-	//	"encoding/json"
 	"bytes"
 	"io"
-
 	"os"
+	"path/filepath"
 	"testing"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
@@ -14,11 +13,17 @@ import (
 
 func TestSimplecompress(T *testing.T) {
 	filename := "../../../test/output/simplecompress.dat"
+	fd, _ := filepath.Abs(filename)
+	defer os.Remove(fd)
 	output, err := openOutput(filename)
-	defer os.Remove(output.File.Name())
+
 	inputFolder := `../../../test/testdata/simplefolder`
 	_, _, err = readInputFolder(inputFolder)
-	closeOutput()
+
+	T.Logf("Output struct: %v", output)
+	written := closeOutput()
+
+	T.Logf("Output file size: %d", written)
 	if err != nil {
 		T.Fatal(err)
 	}
@@ -30,32 +35,14 @@ func TestSimplecompress(T *testing.T) {
 	if err != nil {
 		T.Fatal(err)
 	}
+
 	var b bytes.Buffer
 	r := lzma.NewReader(f)
-	io.Copy(&b, r)
+	io.CopyN(&b, r, int64(written))
 	r.Close()
-	if len(b.Bytes()) != 6 {
-		T.Error("Unexpected uncompressed data size")
+	readed := len(b.Bytes())
+	if readed != 6 {
+		T.Errorf("Unexpected uncompressed data size %d", readed)
 	}
 
 }
-
-//func TestHeader(T *testing.T) {
-//	inputFolder := `D:\workspace\ETax-2.0\runtimes\runtime\jre8u172_stable`
-//	dirinfo, rootfolder, _ := readInputFolder(inputFolder)
-//	dump, _ := json.Marshal(dirinfo)
-//	ioutil.WriteFile("../../../test/output/dirinfo.json", dump, 0644)
-//	dump, _ = json.Marshal(rootfolder)
-//	ioutil.WriteFile("../../../test/output/rootfolder.json", dump, 0644)
-
-//}
-
-//func TestFast(T *testing.T) {
-//	inputFolder := `D:\workspace\ETax-2.0\runtimes\runtime\jre8u172_stable`
-//	_, err := openOutput("../../../test/output/runtime.dat")
-//	_, _, err = readInputFolder(inputFolder)
-//	closeOutput()
-//	if err != nil {
-//		T.Fatal(err)
-//	}
-//}

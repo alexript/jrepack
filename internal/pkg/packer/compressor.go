@@ -4,18 +4,19 @@ import (
 	"errors"
 	"io"
 	"os"
+	"runtime"
 
 	"github.com/itchio/lzma"
 )
 
 type Output struct {
-	File        *os.File
-	Writer      io.WriteCloser
-	TailPointer int
+	File   *os.File
+	Writer io.WriteCloser
 }
 
 var (
-	o *Output
+	o           *Output
+	writtensize uint64
 )
 
 func openOutput(filename string) (*Output, error) {
@@ -31,30 +32,34 @@ func openOutput(filename string) (*Output, error) {
 	w := lzma.NewWriterLevel(output, 8)
 
 	o = &Output{
-		File:        output,
-		Writer:      w,
-		TailPointer: 0,
+		File:   output,
+		Writer: w,
 	}
+	writtensize = 0
 	return o, nil
 
 }
 
-func compress(data []byte) (int, int, error) {
+func compress(data []byte) (uint64, int, error) {
 	if o != nil {
-		offset := o.TailPointer
+		l := len(data)
+		offset := writtensize
 		n, err := o.Writer.Write(data)
-		if err != nil {
-			o.TailPointer += n
+		if err == nil {
+			writtensize = writtensize + uint64(l)
 		}
 		return offset, n, err
 	}
-	return -1, 0, nil
+	return 0, 0, nil
 }
 
-func closeOutput() {
+func closeOutput() uint64 {
 	if o != nil {
 		o.Writer.Close()
+
 		o.File.Close()
 		o = nil
+		runtime.GC()
 	}
+	return writtensize
 }

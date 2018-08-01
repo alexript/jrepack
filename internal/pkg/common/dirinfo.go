@@ -40,7 +40,7 @@ const (
 	jarExt = ".jar"
 )
 
-type Offset map[int][]byte
+type Offset map[uint64][]byte
 type Dirinfo map[string][]*File
 
 func (di Dirinfo) String() string {
@@ -72,6 +72,7 @@ var (
 )
 
 func IsContainer(filename string) (*containerType, bool) {
+
 	ext := path.Ext(filename)
 	for _, v := range containerTypes {
 		if strings.EqualFold(ext, v.Extension) {
@@ -94,7 +95,7 @@ func GetOffsets() *Offset {
 	return &offsets
 }
 
-func SetOffset(offset int, hash []byte) {
+func SetOffset(offset uint64, hash []byte) {
 	offsets[offset] = hash
 }
 

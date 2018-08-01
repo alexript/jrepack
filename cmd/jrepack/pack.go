@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	inputFolder = `D:\workspace\ETax-2.0\runtimes\runtime\jre8u172`
-	outputFile  = `D:\workspace\ETax-2.0\runtimes\runtime\jre8u172.jre`
+	inputFolder = `D:\workspace\ETax-2.0\runtimes\runtime\jre8u172_stable`
+	outputFile  = `D:\workspace\ETax-2.0\runtimes\runtime\jre8u172_stable.jre`
 )
 
 func main() {
