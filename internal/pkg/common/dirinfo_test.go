@@ -86,7 +86,7 @@ func TestNewFile(t *testing.T) {
 func TestNewFolder(t *testing.T) {
 	expectedName := "test"
 	expectedZeroNum := 0
-	f := NewFolder(expectedName)
+	f := NewFolder(expectedName, false)
 	if f.Name != expectedName {
 		t.Errorf("Result: '%v', expected: '%v'", f.Name, expectedName)
 	}
@@ -98,32 +98,7 @@ func TestNewFolder(t *testing.T) {
 	if expectedZeroNum != resultFoldersNum {
 		t.Errorf("Result: '%v', expected: '%v'", resultFoldersNum, expectedZeroNum)
 	}
-	resultContainersNum := len(f.Containers)
-	if expectedZeroNum != resultContainersNum {
-		t.Errorf("Result: '%v', expected: '%v'", resultContainersNum, expectedZeroNum)
-	}
-}
 
-func TestNewContainer(t *testing.T) {
-	c := NewContainer("test")
-	if c != nil {
-		t.Error("Accepted not container name")
-	}
-
-	c = NewContainer("test.zip")
-	if c == nil {
-		t.Error("ZIP container is not accepted")
-	}
-
-	expectedName := "test.jar"
-	c = NewContainer(expectedName)
-	if c == nil {
-		t.Error("JAR container is not accepted")
-	}
-
-	if expectedName != c.Content.Name {
-		t.Error("Container have no name")
-	}
 }
 
 func TestAddFileToFolder(t *testing.T) {
@@ -140,7 +115,7 @@ func TestAddFileToFolder(t *testing.T) {
 		t.Error("Nil folder are accepted")
 	}
 
-	fold := NewFolder("test")
+	fold := NewFolder("test", false)
 	err = AddFileToFolder(&fold, nil)
 	if err == nil {
 		t.Error("Nil file are accepted")
@@ -165,13 +140,13 @@ func TestAddFolderToFolder(t *testing.T) {
 		t.Error("Nil folder and Nil folder are accepted")
 	}
 
-	src := NewFolder("test")
+	src := NewFolder("test", false)
 	err = AddFolderToFolder(nil, &src)
 	if err == nil {
 		t.Error("Nil destination folder are accepted")
 	}
 
-	dest := NewFolder("test")
+	dest := NewFolder("test", false)
 	err = AddFolderToFolder(&dest, nil)
 	if err == nil {
 		t.Error("Nil source folder are accepted")
@@ -186,137 +161,6 @@ func TestAddFolderToFolder(t *testing.T) {
 	resultSize := len(dest.Folders)
 	if expectedSize != resultSize {
 		t.Errorf("Expected %v fodlers in folder. Result: %v", expectedSize, resultSize)
-	}
-}
-
-func TestAddContainerToFolder(t *testing.T) {
-
-	err := AddContainerToFolder(nil, nil)
-	if err == nil {
-		t.Error("Nil folder and Nil container are accepted")
-	}
-
-	dest := NewFolder("test")
-	err = AddContainerToFolder(&dest, nil)
-	if err == nil {
-		t.Error("Nil container are accepted")
-	}
-
-	c := NewContainer("test.zip")
-	err = AddContainerToFolder(nil, c)
-	if err == nil {
-		t.Error("Nil destination folder are accepted")
-	}
-
-	err = AddContainerToFolder(&dest, c)
-	if err != nil {
-		t.Error("Unable to append container to folder")
-	}
-
-	expectedSize := 1
-	resultSize := len(dest.Containers)
-	if expectedSize != resultSize {
-		t.Errorf("Expected %v containers in folder. Result: %v", expectedSize, resultSize)
-	}
-}
-
-func TestAddFileToContainer(t *testing.T) {
-	expectedHexString := "010203040506"
-	expectedBody := fromHex(expectedHexString)
-	err := AddFileToContainer(nil, nil)
-	if err == nil {
-		t.Error("Nil container and Nil file are accepted")
-	}
-
-	f, _ := NewFile("test", expectedBody)
-	err = AddFileToContainer(nil, f)
-	if err == nil {
-		t.Error("Nil container are accepted")
-	}
-
-	c := NewContainer("test.zip")
-	err = AddFileToContainer(c, nil)
-	if err == nil {
-		t.Error("Nil file are accepted")
-	}
-
-	err = AddFileToContainer(c, f)
-	if err != nil {
-		t.Error("Unable to append file to container")
-	}
-
-	expectedSize := 1
-	resultSize := len(c.Content.Files)
-	if expectedSize != resultSize {
-		t.Errorf("Expected %v files in container. Result: %v", expectedSize, resultSize)
-	}
-}
-
-func TestAddFolderToContainer(t *testing.T) {
-
-	err := AddFolderToContainer(nil, nil)
-	if err == nil {
-		t.Error("Nil container and Nil folder are accepted")
-	}
-
-	src := NewFolder("test")
-	err = AddFolderToContainer(nil, &src)
-	if err == nil {
-		t.Error("Nil contaienr are accepted")
-	}
-
-	c := NewContainer("test.zip")
-	err = AddFolderToContainer(c, nil)
-	if err == nil {
-		t.Error("Nil folder are accepted")
-	}
-
-	err = AddFolderToContainer(c, &src)
-	if err != nil {
-		t.Error("Unable to append fodler to container")
-	}
-
-	expectedSize := 1
-	resultSize := len(c.Content.Folders)
-	if expectedSize != resultSize {
-		t.Errorf("Expected %v fodlers in container. Result: %v", expectedSize, resultSize)
-	}
-}
-
-func TestAddContainerToContainer(t *testing.T) {
-
-	err := AddContainerToContainer(nil, nil)
-	if err == nil {
-		t.Error("Nil container and Nil container are accepted")
-	}
-
-	dest := NewContainer("test.zip")
-	err = AddContainerToContainer(dest, nil)
-	if err == nil {
-		t.Error("Nil source container are accepted")
-	}
-
-	c := NewContainer("test.zip")
-
-	err = AddContainerToContainer(nil, c)
-
-	if err == nil {
-		t.Error("Nil destination container are accepted")
-	}
-
-	err = AddContainerToContainer(dest, c)
-
-	if err != nil {
-		t.Errorf("Unable to append container to container %v", dest)
-	}
-
-	expectedSize := 1
-	resultSize := len(dest.Content.Containers)
-	if expectedSize != resultSize {
-		t.Errorf("Expected %v containers in container. Result: %v \n", expectedSize, resultSize)
-		t.Errorf("Dest: %v", dest)
-		t.Errorf("Src: %v", c)
-
 	}
 }
 
@@ -343,7 +187,7 @@ func TestAddFileToDirinfo(t *testing.T) {
 	expectedBody4 := fromHex(expectedHexString4)
 
 	// dummy folder to collect files
-	fold := NewFolder("dummy")
+	fold := NewFolder("dummy", false)
 
 	ClearDirinfo()
 	currentLen := len(dirinfo)
@@ -388,8 +232,8 @@ func TestAddFileToDirinfo(t *testing.T) {
 }
 
 func TestHasFolder(T *testing.T) {
-	parent := NewFolder("parent")
-	child := NewFolder("child")
+	parent := NewFolder("parent", false)
+	child := NewFolder("child", false)
 	AddFolderToFolder(&parent, &child)
 
 	f, err := (&parent).HasFolder("child")
@@ -415,7 +259,7 @@ func TestHasFolder(T *testing.T) {
 
 func TestMkdirAll(T *testing.T) {
 	path := "/f1/f2"
-	root := NewFolder("root")
+	root := NewFolder("root", false)
 	result, err := MkdirAll(&root, path)
 	if err != nil {
 		T.Fatal(err)
@@ -471,7 +315,7 @@ func TestAddFoldersAndFilesToFolder(T *testing.T) {
 	testCase := "f1/f2/file.txt"
 	hexString := "010203040506"
 	body := fromHex(hexString)
-	parent := NewFolder("test")
+	parent := NewFolder("test", false)
 	file, _ := NewFile(testCase, body)
 	AddFileToFolder(&parent, file)
 

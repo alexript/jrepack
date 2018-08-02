@@ -16,7 +16,7 @@ type Output struct {
 
 var (
 	o           *Output
-	writtensize uint64
+	writtensize uint32
 )
 
 func openOutput(filename string) (*Output, error) {
@@ -40,20 +40,20 @@ func openOutput(filename string) (*Output, error) {
 
 }
 
-func compress(data []byte) (uint64, int, error) {
+func compress(data []byte) (uint32, int, error) {
 	if o != nil {
 		l := len(data)
 		offset := writtensize
 		n, err := o.Writer.Write(data)
 		if err == nil {
-			writtensize = writtensize + uint64(l)
+			writtensize = writtensize + uint32(l)
 		}
 		return offset, n, err
 	}
 	return 0, 0, nil
 }
 
-func closeOutput() uint64 {
+func closeOutput() uint32 {
 	if o != nil {
 		o.Writer.Close()
 

@@ -30,7 +30,7 @@ func readInputFolder(inputFolder string) (*common.Dirinfo, *common.Folder, error
 	}
 
 	common.ClearDirinfo()
-	rootfolder := common.NewFolder("_root_")
+	rootfolder := common.NewFolder("_root_", false)
 	err = walkInputTree(absPath, &rootfolder)
 	if err != nil {
 		return nil, nil, err
@@ -53,7 +53,7 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 		name := fi.Name()
 		fullname := filepath.Join(dirname, name)
 		if fi.IsDir() {
-			subfolder := common.NewFolder(name)
+			subfolder := common.NewFolder(name, false)
 			common.AddFolderToFolder(parent, &subfolder)
 			walkInputTree(fullname, &subfolder)
 		} else {
@@ -61,12 +61,14 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 			_, isContainer := common.IsContainer(fullname)
 
 			if isContainer {
-				container := common.NewContainer(name)
-				err := readContainer(container, fullname)
+				subfolder := common.NewFolder(name, true)
+
+				err := readContainer(&subfolder, fullname)
 				if err != nil {
 					return err
 				}
-				common.AddContainerToFolder(parent, container)
+				common.AddFolderToFolder(parent, &subfolder)
+
 			} else {
 
 				fileData, err := ioutil.ReadFile(fullname)
@@ -80,7 +82,7 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 					if err != nil {
 						return err
 					}
-					common.SetOffset(offset, file.Hashsum)
+					common.SetOffset(uint32(offset), file.Hashsum)
 				}
 			}
 		}
@@ -89,7 +91,7 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 	return nil
 }
 
-func readContainer(container *common.Container, filename string) error {
+func readContainer(container *common.Folder, filename string) error {
 	r, err := zip.OpenReader(filename)
 	if err != nil {
 		return err
@@ -99,12 +101,9 @@ func readContainer(container *common.Container, filename string) error {
 			panic(err)
 		}
 	}()
-	//	log, err := os.Create("ttt")
-	//	defer log.Close()
+
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extractAndWriteFile := func(f *zip.File) error {
-
-		//		log.WriteString(f.Name + "\n")
 
 		rc, err := f.Open()
 		if err != nil {
@@ -116,55 +115,28 @@ func readContainer(container *common.Container, filename string) error {
 			}
 		}()
 
-		//path := filepath.Join(dest, f.Name)
-
 		if f.FileInfo().IsDir() {
-			folder := common.NewFolder(f.Name)
-			common.AddFolderToContainer(container, &folder)
+			folder := common.NewFolder(f.Name, false)
+			common.AddFolderToFolder(container, &folder)
 
 		} else {
-			_, isContainer := common.IsContainer(f.Name)
-			if isContainer {
-				file, err := ioutil.TempFile(os.TempDir(), "jrepacktmp")
-				defer os.Remove(file.Name())
 
-				_, err = io.Copy(file, rc)
+			var b bytes.Buffer
 
-				if err != nil {
-					return err
-				}
-
-				if err := file.Close(); err != nil {
-					return err
-				}
-
-				newcontainer := common.NewContainer(f.Name)
-				err = readContainer(newcontainer, file.Name())
-				if err != nil {
-					return err
-				}
-				err = common.AddContainerToContainer(container, newcontainer)
-				if err != nil {
-					return err
-				}
-
-			} else {
-				var b bytes.Buffer
-
-				_, err = io.Copy(&b, rc)
-				if err != nil {
-					return err
-				}
-				file, isNewHash := common.NewFile(f.Name, b.Bytes())
-				common.AddFileToContainer(container, file)
-				if isNewHash {
-					offset, _, err := compress(b.Bytes())
-					if err != nil {
-						return err
-					}
-					common.SetOffset(offset, file.Hashsum)
-				}
+			_, err = io.Copy(&b, rc)
+			if err != nil {
+				return err
 			}
+			file, isNewHash := common.NewFile(f.Name, b.Bytes())
+			common.AddFileToFolder(container, file)
+			if isNewHash {
+				offset, _, err := compress(b.Bytes())
+				if err != nil {
+					return err
+				}
+				common.SetOffset(uint32(offset), file.Hashsum)
+			}
+
 		}
 		return nil
 	}

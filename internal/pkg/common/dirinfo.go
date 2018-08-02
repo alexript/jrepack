@@ -19,10 +19,10 @@ type File struct {
 }
 
 type Folder struct {
-	Name       string       `json:name`
-	Folders    []*Folder    `json:folders`
-	Files      []*File      `json:files`
-	Containers []*Container `json:containers`
+	IsContainer bool      `json:isContainer`
+	Name        string    `json:name`
+	Folders     []*Folder `json:folders`
+	Files       []*File   `json:files`
 }
 
 type containerType struct {
@@ -30,17 +30,12 @@ type containerType struct {
 	Extension string `json:ext`
 }
 
-type Container struct {
-	Content Folder         `json:content`
-	Type    *containerType `json:type`
-}
-
 const (
 	zipExt = ".zip"
 	jarExt = ".jar"
 )
 
-type Offset map[uint64][]byte
+type Offset map[uint32][]byte
 type Dirinfo map[string][]*File
 
 func (di Dirinfo) String() string {
@@ -51,11 +46,6 @@ func (di Dirinfo) String() string {
 func (f Folder) String() string {
 	dump, _ := json.MarshalIndent(f, "", "   ")
 	return fmt.Sprintf("\nFolder:\n%s\n", dump)
-}
-
-func (c Container) String() string {
-	dump, _ := json.MarshalIndent(c, "", "   ")
-	return fmt.Sprintf("\nContainer:\n%s\n", dump)
 }
 
 func (o Offset) String() string {
@@ -95,7 +85,7 @@ func GetOffsets() *Offset {
 	return &offsets
 }
 
-func SetOffset(offset uint64, hash []byte) {
+func SetOffset(offset uint32, hash []byte) {
 	offsets[offset] = hash
 }
 
@@ -132,23 +122,12 @@ func NewFile(filename string, body []byte) (*File, bool) {
 	return &f, isNewHash
 }
 
-func NewFolder(foldername string) Folder {
+func NewFolder(foldername string, isContainer bool) Folder {
 	return Folder{
-		Name:       foldername,
-		Folders:    make([]*Folder, 0),
-		Files:      make([]*File, 0),
-		Containers: make([]*Container, 0),
-	}
-}
-
-func NewContainer(name string) *Container {
-	t, ok := IsContainer(name)
-	if !ok {
-		return nil
-	}
-	return &Container{
-		Content: NewFolder(name),
-		Type:    t,
+		IsContainer: isContainer,
+		Name:        foldername,
+		Folders:     make([]*Folder, 0),
+		Files:       make([]*File, 0),
 	}
 }
 
@@ -179,17 +158,6 @@ func (fold *Folder) HasFolder(name string) (*Folder, error) {
 
 }
 
-func (c *Container) HasFolder(name string) (*Folder, error) {
-	if c == nil {
-		return nil, errors.New("nil folder while search for " + name)
-	}
-
-	if len(c.Content.Folders) == 0 {
-		return nil, nil
-	}
-	return findFolder(c.Content.Folders, name)
-}
-
 func MkdirAll(fold *Folder, somepath string) (f *Folder, err error) {
 	l := len(somepath)
 	i := 0
@@ -216,7 +184,7 @@ func MkdirAll(fold *Folder, somepath string) (f *Folder, err error) {
 	if found != nil {
 		childfolder = found
 	} else {
-		t := NewFolder(name)
+		t := NewFolder(name, false)
 		childfolder = &t
 		err = AddFolderToFolder(fold, childfolder)
 		if err != nil {
@@ -275,93 +243,5 @@ func AddFolderToFolder(dest *Folder, src *Folder) error {
 		src.Name = path.Base(src.Name)
 	}
 	target.Folders = append(target.Folders, src)
-	return nil
-}
-
-func AddContainerToFolder(dest *Folder, src *Container) error {
-	if dest == nil {
-		return errors.New("Destination folder is nil")
-	}
-	if src == nil {
-		return errors.New("Container is nil")
-	}
-	dest.Containers = append(dest.Containers, src)
-	return nil
-}
-
-func AddFileToContainer(c *Container, f *File) error {
-	if c == nil {
-		return errors.New("Container is nil")
-	}
-	if f == nil {
-		return errors.New("File is nil")
-	}
-
-	dirname := path.Dir(f.Name)
-
-	target := &(c.Content)
-
-	if dirname != "." {
-		t, err := MkdirAll(target, dirname)
-		if err != nil {
-			return err
-		}
-		target = t
-		f.Name = path.Base(f.Name)
-	}
-
-	target.Files = append(target.Files, f)
-
-	return nil
-}
-
-func AddFolderToContainer(c *Container, src *Folder) error {
-	if c == nil {
-		return errors.New("Container is nil")
-	}
-	if src == nil {
-		return errors.New("Source folder is nil")
-	}
-
-	dirname := path.Dir(src.Name)
-
-	target := &(c.Content)
-
-	if dirname != "." {
-		t, err := MkdirAll(target, dirname)
-		if err != nil {
-			return err
-		}
-		target = t
-		src.Name = path.Base(src.Name)
-	} else {
-		target.Folders = append(target.Folders, src)
-	}
-
-	return nil
-}
-
-func AddContainerToContainer(dest *Container, src *Container) error {
-	if dest == nil {
-		return errors.New("Destination container is nil")
-	}
-	if src == nil {
-		return errors.New("Source container is nil")
-	}
-
-	dirname := path.Dir(src.Content.Name)
-
-	target := &(dest.Content)
-
-	if dirname != "." {
-		t, err := MkdirAll(target, dirname)
-		if err != nil {
-			return err
-		}
-		target = t
-		src.Content.Name = path.Base(src.Content.Name)
-	}
-	target.Containers = append(target.Containers, src)
-
 	return nil
 }
