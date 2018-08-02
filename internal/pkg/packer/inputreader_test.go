@@ -44,7 +44,7 @@ func TestReadSimplefolder(T *testing.T) {
 	T.Logf("Root folder: %v", rootFolder)
 
 	resultDirinfoLength := len(*dirinfo)
-	if resultDirinfoLength != 1 {
+	if resultDirinfoLength != 2 {
 		T.Errorf("Expected only 1 record in dirinfo. Result: %v", resultDirinfoLength)
 	}
 }

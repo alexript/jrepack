@@ -41,7 +41,7 @@ func TestSimplecompress(T *testing.T) {
 	io.CopyN(&b, r, int64(written))
 	r.Close()
 	readed := len(b.Bytes())
-	if readed != 6 {
+	if readed != 12 {
 		T.Errorf("Unexpected uncompressed data size %d", readed)
 	}
 

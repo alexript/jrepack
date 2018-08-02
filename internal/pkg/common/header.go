@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"crypto/hmac"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 const (
 	FArchive uint8 = 1
+	FData    uint8 = 2
 )
 
 func getFlags(f *Folder) uint8 {
@@ -23,6 +25,7 @@ func getFlags(f *Folder) uint8 {
 type FolderRecord struct {
 	Parent     uint32 `json:parentId`
 	Flags      uint8  `json:flags`
+	Data       uint32 `json:dataId`
 	Namelength uint8  `json:namelen`
 	Name       []byte `json:name`
 }
@@ -35,7 +38,7 @@ type DataRecord struct {
 	Hash   []byte `json:hash`
 }
 
-type DataHeader []DataRecord
+type DataHeader []*DataRecord
 
 type Header struct {
 	Folders FoldersHeader `json:folders`
@@ -57,35 +60,56 @@ func NewHeader(packedSize uint32) *Header {
 	return &h
 }
 
-type Foldable interface {
-	Fold(parentId uint32, f *Folder) uint32
-}
-
-type Serializable interface {
-	Marshal(folder *Folder, offsets *Offset)
-}
-
 type Packable interface {
 	Pack(offset uint32, size uint32, hash []byte)
+}
+
+func (h *Header) FindDataOffset(f *File) uint32 {
+	for i, dr := range h.Data {
+		if hmac.Equal(dr.Hash, f.Hashsum) {
+			dr.Size = uint32(f.Size)
+			return uint32(i)
+		}
+	}
+	return 0
 }
 
 func (h *Header) Fold(parentId uint32, f *Folder) uint32 {
 	nbytes := []byte(f.Name)
 	nl := len(nbytes)
+
+	l := len(h.Folders) + 1
+	folderId := uint32(l)
+
 	flags := getFlags(f)
 	rec := FolderRecord{
 		Parent:     parentId,
 		Flags:      flags,
+		Data:       0,
 		Namelength: uint8(nl),
 		Name:       nbytes,
 	}
-	l := len(h.Folders) + 1
+
 	h.Folders = append(h.Folders, rec)
-	return uint32(l)
+
+	for _, file := range f.Files {
+		nbytes = []byte(file.Name)
+		nl = len(nbytes)
+		rec = FolderRecord{
+			Parent:     folderId,
+			Flags:      FData,
+			Data:       h.FindDataOffset(file),
+			Namelength: uint8(nl),
+			Name:       nbytes,
+		}
+		h.Folders = append(h.Folders, rec)
+	}
+
+	return folderId
 }
 
 func (h *Header) Pack(offset uint32, size uint32, hash []byte) {
-	rec := DataRecord{
+	rec := &DataRecord{
 		Offset: offset,
 		Size:   size,
 		Hash:   hash,
@@ -101,12 +125,12 @@ func marsh(h *Header, parentId uint32, folders []*Folder) {
 }
 
 func (h *Header) Marshal(folder *Folder, offsets *Offset) {
-	id := h.Fold(0, folder)
-	marsh(h, id, folder.Folders)
-
 	for offset, hash := range *offsets {
 		h.Pack(offset, 0, hash)
 	}
+	id := h.Fold(0, folder)
+	marsh(h, id, folder.Folders)
+
 }
 
 func ToBinary(h *Header) []byte {
@@ -115,6 +139,7 @@ func ToBinary(h *Header) []byte {
 	for _, f := range h.Folders {
 		binary.Write(buf, order, f.Parent)
 		binary.Write(buf, order, f.Flags)
+		binary.Write(buf, order, f.Data)
 		binary.Write(buf, order, f.Namelength)
 		binary.Write(buf, order, f.Name)
 	}
@@ -142,12 +167,15 @@ func FromBinary(b []byte) *Header {
 	for i := uint32(0); i < foldersNum; i++ {
 		parentId := order.Uint32(b[offset : offset+4])
 		flags := uint8(b[offset+4])
-		namelength := uint8(b[offset+5])
-		name := b[offset+6 : offset+6+uint32(namelength)]
-		offset += (6 + uint32(namelength))
+		dataId := order.Uint32(b[offset+5 : offset+9])
+
+		namelength := uint8(b[offset+9])
+		name := b[offset+10 : offset+10+uint32(namelength)]
+		offset += (10 + uint32(namelength))
 		rec := FolderRecord{
 			Parent:     parentId,
 			Flags:      flags,
+			Data:       dataId,
 			Namelength: namelength,
 			Name:       name,
 		}
