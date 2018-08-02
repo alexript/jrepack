@@ -1,11 +1,15 @@
 package packer
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
+	"github.com/itchio/lzma"
 )
 
 func Pack(inputFolder, outputFile string) error {
@@ -44,7 +48,20 @@ func Pack(inputFolder, outputFile string) error {
 	dataSize := closeOutput()
 
 	h := common.NewHeader(dataSize)
-	h.Marshal(rootfolder, common.GetOffsets())
+	offsets := common.GetOffsets()
+	h.Marshal(rootfolder, offsets)
+	rootfolder = nil
+	offsets = nil
+	runtime.GC()
+	binHeader := common.ToBinary(h)
+	h = nil
+	runtime.GC()
+	var compressedHeader bytes.Buffer
+	w := lzma.NewWriterLevel(&compressedHeader, 8)
+	w.Write(binHeader)
+	w.Close()
+	binHeader = nil
+	runtime.GC()
 
 	f, err := os.OpenFile(output, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
@@ -52,7 +69,18 @@ func Pack(inputFolder, outputFile string) error {
 	}
 
 	defer f.Close()
+	defer runtime.GC()
 
-	_, err = f.Write(common.ToBinary(h))
+	chb := compressedHeader.Bytes()
+	defer compressedHeader.Reset()
+
+	_, err = f.Write(chb)
+	if err != nil {
+		return err
+	}
+	l := uint32(len(chb))
+	a := make([]byte, 4)
+	binary.BigEndian.PutUint32(a, l)
+	_, err = f.Write(a)
 	return err
 }
