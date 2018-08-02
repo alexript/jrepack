@@ -3,7 +3,7 @@ package common
 import (
 	"encoding/hex"
 	"encoding/json"
-
+	"path"
 	"testing"
 )
 
@@ -343,4 +343,31 @@ func TestAddFoldersAndFilesToFolder(T *testing.T) {
 
 	dump, _ := json.MarshalIndent(parent, "// ", "   ")
 	T.Logf("Root folder: %s", dump)
+}
+
+func TestAddContainerToFolder(T *testing.T) {
+	// simulate zip structure: dirs has '/' at end
+	expectedHexString := "010203040506"
+	expectedBody := fromHex(expectedHexString)
+
+	s1 := "/F/"
+	s2 := "/F/test"
+	zip := NewFolder("zip", true)
+	folder := NewFolder(s1, false)
+	file, _ := NewFile(s2, expectedBody)
+	AddFolderToFolder(&zip, &folder)
+	AddFileToFolder(&zip, file)
+
+	foldersInF := zip.Folders[0].Folders
+
+	log := T.Logf
+	if len(foldersInF) != 0 {
+		log := T.Errorf
+		log("Folder F contain subfolders")
+	}
+
+	dirname := path.Dir(s1)
+	basename := path.Base(s1)
+	log("Dirname: %s, Basename: %s", dirname, basename)
+	log("Struct: %v", zip)
 }

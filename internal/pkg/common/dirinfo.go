@@ -123,9 +123,16 @@ func NewFile(filename string, body []byte) (*File, bool) {
 }
 
 func NewFolder(foldername string, isContainer bool) Folder {
+
+	i := len(foldername) - 1
+
+	for i > 0 && os.IsPathSeparator(foldername[i]) {
+		i--
+	}
+
 	return Folder{
 		IsContainer: isContainer,
-		Name:        foldername,
+		Name:        foldername[0 : i+1],
 		Folders:     make([]*Folder, 0),
 		Files:       make([]*File, 0),
 	}
