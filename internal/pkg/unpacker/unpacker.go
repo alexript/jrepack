@@ -2,6 +2,7 @@ package unpacker
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -30,14 +31,18 @@ func UnPack(inputFile, outputFolder string) error {
 		return errors.New("Output folder exists")
 	}
 
-	err = nil
-
-	_, err = readArch(inputFile)
+	header, err := readArch(inputFile)
 
 	if err != nil {
 		common.RemoveDirReq(output)
-		return err
+		return errors.New(fmt.Sprintf("Unable to read compressed header: %v", err))
 	}
 
-	return nil
+	err = Decompress(header, inputFile, output)
+	if err != nil {
+		common.RemoveDirReq(output)
+		return errors.New(fmt.Sprintf("Unable to decompress header: %v", err))
+	}
+
+	return err
 }

@@ -13,6 +13,10 @@ const (
 	FData    uint8 = 2
 )
 
+var (
+	Order = binary.BigEndian
+)
+
 func getFlags(f *Folder) uint8 {
 	flags := uint8(0)
 	if f.IsContainer {
@@ -134,40 +138,40 @@ func (h *Header) Marshal(folder *Folder, offsets *Offset) {
 }
 
 func ToBinary(h *Header) []byte {
-	order := binary.BigEndian
+
 	buf := new(bytes.Buffer)
 	for _, f := range h.Folders {
-		binary.Write(buf, order, f.Parent)
-		binary.Write(buf, order, f.Flags)
-		binary.Write(buf, order, f.Data)
-		binary.Write(buf, order, f.Namelength)
-		binary.Write(buf, order, f.Name)
+		binary.Write(buf, Order, f.Parent)
+		binary.Write(buf, Order, f.Flags)
+		binary.Write(buf, Order, f.Data)
+		binary.Write(buf, Order, f.Namelength)
+		binary.Write(buf, Order, f.Name)
 	}
 
 	for _, d := range h.Data {
-		binary.Write(buf, order, d.Offset)
-		binary.Write(buf, order, d.Size)
-		binary.Write(buf, order, d.Hash)
+		binary.Write(buf, Order, d.Offset)
+		binary.Write(buf, Order, d.Size)
+		binary.Write(buf, Order, d.Hash)
 	}
 
-	binary.Write(buf, order, uint32(len(h.Folders)))
-	binary.Write(buf, order, h.Size)
+	binary.Write(buf, Order, uint32(len(h.Folders)))
+	binary.Write(buf, Order, h.Size)
 	return buf.Bytes()
 }
 
 func FromBinary(b []byte) *Header {
-	order := binary.BigEndian
+
 	l := len(b)
 
-	dataSize := order.Uint32(b[l-4:])
+	dataSize := Order.Uint32(b[l-4:])
 
 	h := NewHeader(dataSize)
-	foldersNum := order.Uint32(b[l-8 : l-4])
+	foldersNum := Order.Uint32(b[l-8 : l-4])
 	offset := uint32(0)
 	for i := uint32(0); i < foldersNum; i++ {
-		parentId := order.Uint32(b[offset : offset+4])
+		parentId := Order.Uint32(b[offset : offset+4])
 		flags := uint8(b[offset+4])
-		dataId := order.Uint32(b[offset+5 : offset+9])
+		dataId := Order.Uint32(b[offset+5 : offset+9])
 
 		namelength := uint8(b[offset+9])
 		name := b[offset+10 : offset+10+uint32(namelength)]
@@ -182,5 +186,17 @@ func FromBinary(b []byte) *Header {
 
 		h.Folders = append(h.Folders, rec)
 	}
+	i := offset
+	for i < uint32(l-8) {
+
+		d := DataRecord{
+			Offset: Order.Uint32(b[i : i+4]),
+			Size:   Order.Uint32(b[i+4 : i+8]),
+			Hash:   b[i+8 : i+40],
+		}
+		h.Data = append(h.Data, &d)
+		i += 40
+	}
+
 	return h
 }

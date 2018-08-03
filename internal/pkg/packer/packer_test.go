@@ -7,6 +7,11 @@ import (
 )
 
 func TestPack(T *testing.T) {
+	filename := "../../../test/output/packtest.dat"
+	inputFolder := `../../../test/testdata/simplefolder`
+	f, _ := filepath.Abs(filename)
+	os.Remove(f)
+
 	err := Pack("somefolder", "test")
 	if err == nil {
 		T.Fatal("Accept not existed input folder")
@@ -19,10 +24,6 @@ func TestPack(T *testing.T) {
 	}
 	T.Log(err)
 
-	filename := "../../../test/output/packtest.dat"
-	inputFolder := `../../../test/testdata/simplefolder`
-
-	f, _ := filepath.Abs(filename)
 	defer os.Remove(f)
 
 	err = Pack(inputFolder, filename)

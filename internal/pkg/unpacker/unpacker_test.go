@@ -10,25 +10,25 @@ import (
 )
 
 const (
-	filename      string = "../../../test/output/packtest.dat"
-	inputFolder   string = `../../../test/testdata/simplefolder`
-	outputDirRoot string = "../../../test/output/unpacked"
-	outputDirName string = "simplefolder"
+	filename_test      string = "../../../test/output/packtest.dat"
+	inputFolder_test   string = `../../../test/testdata/simplefolder`
+	outputDirRoot_test string = "../../../test/output/unpacked"
+	outputDirName_test string = "simplefolder"
 )
 
 func prepareTestData() error {
-
-	err := packer.Pack(inputFolder, filename)
+	dropTestData()
+	err := packer.Pack(inputFolder_test, filename_test)
 	return err
 }
 
 func dropTestData() {
-	f, _ := filepath.Abs(filename)
+	f, _ := filepath.Abs(filename_test)
 	os.Remove(f)
 
-	root, _ := filepath.Abs(outputDirRoot)
+	root, _ := filepath.Abs(outputDirRoot_test)
 
-	dirName := filepath.Join(root, outputDirName)
+	dirName := filepath.Join(root, outputDirName_test)
 
 	common.RemoveDirReq(dirName)
 }
@@ -40,19 +40,19 @@ func TestUnpacker(T *testing.T) {
 	}
 	defer dropTestData()
 
-	err = UnPack("not_existed", outputDirRoot)
+	err = UnPack("not_existed", outputDirRoot_test)
 	if err == nil {
 		T.Error("Accepted not existed archive")
 	}
 
-	err = UnPack(filename, outputDirRoot)
+	err = UnPack(filename_test, outputDirRoot_test)
 	if err == nil {
 		T.Error("Accepted existed tager folder")
 	}
 
-	root, _ := filepath.Abs(outputDirRoot)
-	dirName := filepath.Join(root, outputDirName)
-	err = UnPack(filename, dirName)
+	root, _ := filepath.Abs(outputDirRoot_test)
+	dirName := filepath.Join(root, outputDirName_test)
+	err = UnPack(filename_test, dirName)
 	if err != nil {
 		T.Fatal(err)
 	}
