@@ -167,6 +167,7 @@ func FromBinary(b []byte) *Header {
 
 	h := NewHeader(dataSize)
 	foldersNum := Order.Uint32(b[l-8 : l-4])
+	h.Folders = make(FoldersHeader, foldersNum)
 	offset := uint32(0)
 	for i := uint32(0); i < foldersNum; i++ {
 		parentId := Order.Uint32(b[offset : offset+4])
@@ -184,18 +185,23 @@ func FromBinary(b []byte) *Header {
 			Name:       name,
 		}
 
-		h.Folders = append(h.Folders, rec)
+		h.Folders[i] = rec
 	}
+
+	dataNum := ((l - 8) - int(offset)) / 40
+	h.Data = make(DataHeader, dataNum)
 	i := offset
+	x := 0
 	for i < uint32(l-8) {
 
-		d := DataRecord{
+		h.Data[x] = &DataRecord{
 			Offset: Order.Uint32(b[i : i+4]),
 			Size:   Order.Uint32(b[i+4 : i+8]),
 			Hash:   b[i+8 : i+40],
 		}
-		h.Data = append(h.Data, &d)
+
 		i += 40
+		x++
 	}
 
 	return h

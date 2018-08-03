@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
 )
@@ -39,6 +40,8 @@ func UnPack(inputFile, outputFolder string) error {
 	}
 
 	err = Decompress(header, inputFile, output)
+	header = nil
+	runtime.GC()
 	if err != nil {
 		common.RemoveDirReq(output)
 		return errors.New(fmt.Sprintf("Unable to decompress header: %v", err))
