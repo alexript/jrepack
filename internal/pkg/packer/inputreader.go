@@ -4,16 +4,17 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
-
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
 )
 
 func readInputFolder(inputFolder string) (*common.Dirinfo, *common.Folder, error) {
+	runtime.GC()
 	absPath, err := filepath.Abs(inputFolder)
 	if err != nil {
 		return nil, nil, err
