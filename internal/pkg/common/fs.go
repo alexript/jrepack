@@ -22,5 +22,6 @@ func RemoveDirReq(dir string) error {
 			return err
 		}
 	}
+	os.Remove(dir)
 	return nil
 }

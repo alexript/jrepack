@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -28,12 +29,12 @@ func Pack(inputFolder, outputFile string) error {
 		return err
 	}
 	if !ifi.IsDir() {
-		return errors.New("Input folder is not the folder")
+		return errors.New(fmt.Sprintf("Input folder %s is not the folder", input))
 	}
 
 	_, err = os.Stat(output)
 	if err == nil {
-		return errors.New("Output file exists")
+		return errors.New(fmt.Sprintf("Output file %s exists", output))
 	}
 
 	_, err = openOutput(output)

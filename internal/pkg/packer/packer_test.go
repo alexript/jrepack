@@ -7,7 +7,7 @@ import (
 )
 
 func TestPack(T *testing.T) {
-	filename := "../../../test/output/packtest.dat"
+	filename := "../../../test/output/packtest2.dat"
 	inputFolder := `../../../test/testdata/simplefolder`
 	f, _ := filepath.Abs(filename)
 	os.Remove(f)
