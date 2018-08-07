@@ -28,7 +28,7 @@ func UnPack(inputFile, outputFolder string) error {
 		return err
 	}
 	_, err = os.Stat(output)
-	if err == nil {
+	if err == nil || os.IsExist(err) {
 		return errors.New("Output folder exists")
 	}
 

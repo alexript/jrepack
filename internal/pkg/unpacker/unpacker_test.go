@@ -11,9 +11,9 @@ import (
 
 const (
 	filename_test      string = "../../../test/output/packtest.dat"
-	inputFolder_test   string = `../../../test/testdata/simplefolder`
+	inputFolder_test   string = `../../../test/testdata/mixedfolder`
 	outputDirRoot_test string = "../../../test/output/unpacked"
-	outputDirName_test string = "simplefolder"
+	outputDirName_test string = "mixedfolder"
 )
 
 func prepareTestData() error {
@@ -47,7 +47,7 @@ func TestUnpacker(T *testing.T) {
 
 	err = UnPack(filename_test, outputDirRoot_test)
 	if err == nil {
-		T.Error("Accepted existed tager folder")
+		T.Error("Accepted existed target folder")
 	}
 
 	root, _ := filepath.Abs(outputDirRoot_test)
