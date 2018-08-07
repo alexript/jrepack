@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetOutputPath(T *testing.T) {
-	f1 := common.NewFolder("f1", false)
+	f1 := common.NewFolder("_root_", false)
 	f2 := common.NewFolder("f2", false)
 	f3 := common.NewFolder("f3", false)
 	f4 := common.NewFolder("f4", false)
@@ -29,7 +29,7 @@ func TestGetOutputPath(T *testing.T) {
 		T.Errorf("Non-nil archive path %s", *archpath)
 	}
 
-	if *dirpath != "f1/f2/f3/f4" {
+	if *dirpath != "f2/f3/f4" {
 		T.Errorf("Wrong path %s", *dirpath)
 	}
 
@@ -55,13 +55,26 @@ func TestGetOutputPath(T *testing.T) {
 		T.Errorf("Non-nil archive path %s", *archpath)
 	}
 
-	if *dirpath != "f1" {
+	if *dirpath != "" {
+		T.Errorf("Wrong path %s", *dirpath)
+	}
+
+	dirpath, archpath, err = GetOutputPath(h, "", f2id)
+	if err != nil {
+		T.Error(err)
+	}
+
+	if archpath != nil {
+		T.Errorf("Non-nil archive path %s", *archpath)
+	}
+
+	if *dirpath != "f2" {
 		T.Errorf("Wrong path %s", *dirpath)
 	}
 }
 
 func TestGetOutputPathWithArchive(T *testing.T) {
-	f1 := common.NewFolder("f1", false)
+	f1 := common.NewFolder("_root_", false)
 	f2 := common.NewFolder("f2", false)
 	f3 := common.NewFolder("f3", true)
 	f4 := common.NewFolder("f4", false)
@@ -83,7 +96,7 @@ func TestGetOutputPathWithArchive(T *testing.T) {
 		T.Fatal("Nil archive path")
 	}
 
-	if *dirpath != "f1/f2/f3" || *archpath != "f4" {
+	if *dirpath != "f2/f3" || *archpath != "f4" {
 		T.Errorf("Wrong path %s:%s", *dirpath, *archpath)
 	}
 

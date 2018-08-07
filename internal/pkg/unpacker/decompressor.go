@@ -21,6 +21,11 @@ func GetOutputPath(h *common.Header, outputdir string, parentid uint32) (p *stri
 	}
 
 	parent := h.Folders[parentid-1]
+
+	if string(parent.Name) == "_root_" {
+		return &outputdir, nil, nil
+	}
+
 	pdir, adir, err := GetOutputPath(h, outputdir, parent.Parent)
 	if err != nil {
 		return nil, nil, err
