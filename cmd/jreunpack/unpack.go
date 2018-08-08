@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alexript/jrepack"
+	"github.com/alexript/jrepack/ui"
 )
 
 var (
@@ -15,10 +16,9 @@ func main() {
 
 	err := jrepack.UnPack(inputFile, outputFolder)
 	if err != nil {
-		fmt.Errorf("jre unpack error: %v", err)
+		ui.Current().Error(fmt.Sprintf("jre unpack error: %v", err))
 		return
 	}
-
-	fmt.Println("UnPacked.")
+	ui.Current().OnEnd("UnPacked.")
 
 }
