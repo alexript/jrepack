@@ -1,17 +1,22 @@
 package unpacker
 
 import (
+	"archive/zip"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"runtime"
-
 	"path"
+	"runtime"
+	"time"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
 	"github.com/itchio/lzma"
+)
+
+const (
+	uint32max = (1 << 32) - 1
 )
 
 func GetOutputPath(h *common.Header, outputdir string, parentid uint32) (p *string, archp *string, err error) {
@@ -55,8 +60,77 @@ func GetOutputPath(h *common.Header, outputdir string, parentid uint32) (p *stri
 	return &dirname, archdirp, nil
 }
 
-func saveToArch(archpath string, filename string, b []byte) error {
-	return nil
+var (
+	OpenedZipFiles map[string]*os.File
+	ZipWriters     map[string]*zip.Writer
+)
+
+func initOpenedZipFiles() {
+	OpenedZipFiles = make(map[string]*os.File)
+	ZipWriters = make(map[string]*zip.Writer)
+}
+
+func closeOpenedZipFiles() {
+	for _, writer := range ZipWriters {
+		writer.Close()
+	}
+	for _, file := range OpenedZipFiles {
+		file.Close()
+	}
+}
+
+func saveToArch(archpath string, filename string, b []byte, isfolder bool) error {
+	var targetFile *os.File
+	var zipWriter *zip.Writer
+	_, err := os.Stat(archpath)
+	if err != nil && os.IsNotExist(err) {
+		targetFile, err = os.Create(archpath)
+		zipWriter = zip.NewWriter(targetFile)
+		OpenedZipFiles[archpath] = targetFile
+		ZipWriters[archpath] = zipWriter
+	} else {
+		if err == nil {
+			targetFile = OpenedZipFiles[archpath]
+			zipWriter = ZipWriters[archpath]
+		} else {
+			return err
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	fl := uint64(0)
+	if b != nil {
+		fl = uint64(len(b))
+	}
+
+	fh := &zip.FileHeader{
+		Name:               filename,
+		UncompressedSize64: fl,
+	}
+	fh.SetModTime(time.Now())
+	fh.SetMode(0666)
+	if fh.UncompressedSize64 > uint32max {
+		fh.UncompressedSize = uint32max
+	} else {
+		fh.UncompressedSize = uint32(fh.UncompressedSize64)
+	}
+	if isfolder {
+		fh.Name += "/"
+	} else {
+		fh.Method = zip.Deflate
+	}
+
+	writer, err := zipWriter.CreateHeader(fh)
+	if err != nil {
+		return err
+	}
+	if b != nil && !isfolder {
+		_, err = writer.Write(b)
+	}
+
+	return err
 }
 
 func writeFile(outputdir string, header *common.Header, file *common.FolderRecord, b []byte) error {
@@ -76,14 +150,23 @@ func writeFile(outputdir string, header *common.Header, file *common.FolderRecor
 			return err
 		}
 		filename := path.Join(*diskpath, string(file.Name))
-		f, err := os.Create(filename)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = f.Write(b)
-		if err != nil {
-			return err
+		if file.Flags == common.FFolder {
+			err := os.MkdirAll(filename, 0777)
+			if err != nil {
+				return err
+			}
+		} else {
+			f, err := os.Create(filename)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			if b != nil {
+				_, err = f.Write(b)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	} else {
 		// file to archive
@@ -93,7 +176,7 @@ func writeFile(outputdir string, header *common.Header, file *common.FolderRecor
 			return err
 		}
 		filename := path.Join(*archpath, string(file.Name))
-		err = saveToArch(*diskpath, filename, b)
+		err = saveToArch(*diskpath, filename, b, file.Flags == common.FFolder)
 		if err != nil {
 			return err
 		}
@@ -109,6 +192,18 @@ func Decompress(header *common.Header, filename string, output string) error {
 		return err
 	}
 
+	initOpenedZipFiles()
+	defer closeOpenedZipFiles()
+
+	for _, folder := range header.Folders {
+		if (folder.Flags == common.FData || folder.Flags == common.FFolder) && folder.Data == uint32(0xFFFFFFFF) {
+			err = writeFile(output, header, &folder, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	needToRead := int64(header.Size)
 	readed := int64(0)
 
@@ -116,7 +211,7 @@ func Decompress(header *common.Header, filename string, output string) error {
 
 	r := lzma.NewReader(f)
 
-	for dataIndex, dataRecord := range header.Data {
+	for _, dataRecord := range header.Data {
 		b.Reset()
 		n, err := io.CopyN(&b, r, int64(dataRecord.Size))
 		if err != nil {
@@ -125,7 +220,7 @@ func Decompress(header *common.Header, filename string, output string) error {
 		readed += n
 
 		for _, folder := range header.Folders {
-			if folder.Flags == common.FData && folder.Data == uint32(dataIndex) {
+			if folder.Flags == common.FData && folder.Data == uint32(dataRecord.Offset) {
 				err = writeFile(output, header, &folder, b.Bytes())
 				if err != nil {
 					return err

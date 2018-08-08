@@ -79,11 +79,15 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 				file, isNewHash := common.NewFile(name, fileData)
 				common.AddFileToFolder(parent, file)
 				if isNewHash {
-					offset, _, err := compress(fileData)
-					if err != nil {
-						return err
+
+					if len(fileData) > 0 {
+						offset, _, err := compress(fileData)
+						if err != nil {
+							return err
+						}
+						common.SetOffset(uint32(offset), file.Hashsum)
 					}
-					common.SetOffset(uint32(offset), file.Hashsum)
+
 				}
 			}
 		}
@@ -128,14 +132,18 @@ func readContainer(container *common.Folder, filename string) error {
 			if err != nil {
 				return err
 			}
-			file, isNewHash := common.NewFile(f.Name, b.Bytes())
+			fileData := b.Bytes()
+			file, isNewHash := common.NewFile(f.Name, fileData)
 			common.AddFileToFolder(container, file)
 			if isNewHash {
-				offset, _, err := compress(b.Bytes())
-				if err != nil {
-					return err
+
+				if len(fileData) > 0 {
+					offset, _, err := compress(fileData)
+					if err != nil {
+						return err
+					}
+					common.SetOffset(uint32(offset), file.Hashsum)
 				}
-				common.SetOffset(uint32(offset), file.Hashsum)
 			}
 
 		}

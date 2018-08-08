@@ -5,8 +5,8 @@ import (
 	"github.com/alexript/jrepack/internal/pkg/unpacker"
 )
 
-func Pack(inputFolder, outputFile string) error {
-	return packer.Pack(inputFolder, outputFile)
+func Pack(inputFolder, outputFile string, dumpheader bool) error {
+	return packer.Pack(inputFolder, outputFile, dumpheader)
 }
 
 func UnPack(inputFile, outputFolder string) error {

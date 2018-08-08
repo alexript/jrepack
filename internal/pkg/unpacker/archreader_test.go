@@ -17,7 +17,7 @@ func TestTest(T *testing.T) {
 	}
 	T.Logf("Unpacked header: %v", header)
 
-	if len(header.Folders) != 21 {
+	if len(header.Folders) != 22 {
 		T.Errorf("Unexpected number of folders: %v", len(header.Folders))
 	}
 

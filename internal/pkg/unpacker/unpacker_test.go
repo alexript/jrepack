@@ -18,7 +18,7 @@ const (
 
 func prepareTestData() error {
 	dropTestData()
-	err := packer.Pack(inputFolder_test, filename_test)
+	err := packer.Pack(inputFolder_test, filename_test, false)
 	return err
 }
 

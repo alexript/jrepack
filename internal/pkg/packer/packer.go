@@ -13,7 +13,7 @@ import (
 	"github.com/itchio/lzma"
 )
 
-func Pack(inputFolder, outputFile string) error {
+func Pack(inputFolder, outputFile string, dumpheader bool) error {
 	input, err := filepath.Abs(inputFolder)
 	if err != nil {
 		return err
@@ -55,8 +55,34 @@ func Pack(inputFolder, outputFile string) error {
 	offsets = nil
 	runtime.GC()
 	binHeader := common.ToBinary(h)
+
+	if dumpheader {
+		json, err := os.Create(output + ".header.json")
+		if err != nil {
+			return err
+		}
+		defer json.Close()
+		_, err = json.Write([]byte(h.String()))
+		if err != nil {
+			return err
+		}
+	}
+
 	h = nil
 	runtime.GC()
+
+	if dumpheader {
+		dump, err := os.Create(output + ".header")
+		if err != nil {
+			return err
+		}
+		defer dump.Close()
+		_, err = dump.Write(binHeader)
+		if err != nil {
+			return err
+		}
+	}
+
 	var compressedHeader bytes.Buffer
 	w := lzma.NewWriterLevel(&compressedHeader, 8)
 	w.Write(binHeader)

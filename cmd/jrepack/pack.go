@@ -12,7 +12,7 @@ var (
 )
 
 func main() {
-	err := jrepack.Pack(inputFolder, outputFile)
+	err := jrepack.Pack(inputFolder, outputFile, false)
 	if err != nil {
 		fmt.Errorf("jre pack error: %v", err)
 		return

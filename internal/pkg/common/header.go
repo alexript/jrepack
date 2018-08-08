@@ -6,9 +6,12 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"runtime"
+	"sort"
 )
 
 const (
+	FFolder  uint8 = 0
 	FArchive uint8 = 1
 	FData    uint8 = 2
 )
@@ -18,7 +21,7 @@ var (
 )
 
 func getFlags(f *Folder) uint8 {
-	flags := uint8(0)
+	flags := FFolder
 	if f.IsContainer {
 		flags |= FArchive
 	}
@@ -69,10 +72,13 @@ type Packable interface {
 }
 
 func (h *Header) FindDataOffset(f *File) uint32 {
-	for i, dr := range h.Data {
+	if f.Size == 0 {
+		return 0xFFFFFFFF
+	}
+	for _, dr := range h.Data {
 		if hmac.Equal(dr.Hash, f.Hashsum) {
 			dr.Size = uint32(f.Size)
-			return uint32(i)
+			return uint32(dr.Offset)
 		}
 	}
 	return 0
@@ -89,7 +95,7 @@ func (h *Header) Fold(parentId uint32, f *Folder) uint32 {
 	rec := FolderRecord{
 		Parent:     parentId,
 		Flags:      flags,
-		Data:       0,
+		Data:       0xFFFFFFFF,
 		Namelength: uint8(nl),
 		Name:       nbytes,
 	}
@@ -204,5 +210,7 @@ func FromBinary(b []byte) *Header {
 		x++
 	}
 
+	sort.Slice(h.Data, func(i, j int) bool { return h.Data[i].Offset < h.Data[j].Offset })
+	runtime.GC()
 	return h
 }
