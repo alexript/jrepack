@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
+	"github.com/alexript/jrepack/ui"
 )
 
 func UnPack(inputFile, outputFolder string) error {
@@ -45,6 +46,10 @@ func UnPack(inputFile, outputFolder string) error {
 	if err != nil {
 		common.RemoveDirReq(output)
 		return errors.New(fmt.Sprintf("Unable to decompress header: %v", err))
+	}
+
+	if err == nil {
+		ui.Current().OnEnd(ui.EVT_UNPACK_DONE)
 	}
 
 	return err

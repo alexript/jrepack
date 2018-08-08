@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/alexript/jrepack/ui"
 	"github.com/itchio/lzma"
 )
 
@@ -36,6 +37,7 @@ func openOutput(filename string) (*Output, error) {
 		Writer: w,
 	}
 	writtensize = 0
+
 	return o, nil
 
 }
@@ -47,7 +49,13 @@ func compress(data []byte) (uint32, int, error) {
 		n, err := o.Writer.Write(data)
 		if err == nil {
 			writtensize = writtensize + uint32(l)
+
+			ui.Current().Compress(ui.Compressed{
+				Len:   l,
+				Total: writtensize,
+			})
 		}
+
 		return offset, n, err
 	}
 	return 0, 0, nil

@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
+	"github.com/alexript/jrepack/ui"
 	"github.com/itchio/lzma"
 )
 
@@ -109,5 +110,10 @@ func Pack(inputFolder, outputFile string, dumpheader bool) error {
 	a := make([]byte, 4)
 	binary.BigEndian.PutUint32(a, l)
 	_, err = f.Write(a)
+
+	if err == nil {
+		ui.Current().OnEnd(ui.EVT_PACK_DONE)
+	}
+
 	return err
 }

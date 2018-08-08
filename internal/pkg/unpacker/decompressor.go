@@ -12,6 +12,7 @@ import (
 	"time"
 
 	common "github.com/alexript/jrepack/internal/pkg/common"
+	"github.com/alexript/jrepack/ui"
 	"github.com/itchio/lzma"
 )
 
@@ -195,8 +196,13 @@ func Decompress(header *common.Header, filename string, output string) error {
 	initOpenedZipFiles()
 	defer closeOpenedZipFiles()
 
+	foldersNum := len(header.Folders)
+	readedFolders := 0
+
 	for _, folder := range header.Folders {
 		if (folder.Flags == common.FData || folder.Flags == common.FFolder) && folder.Data == uint32(0xFFFFFFFF) {
+			readedFolders++
+			ui.Current().Unpack(readedFolders, foldersNum)
 			err = writeFile(output, header, &folder, nil)
 			if err != nil {
 				return err
@@ -221,7 +227,9 @@ func Decompress(header *common.Header, filename string, output string) error {
 
 		for _, folder := range header.Folders {
 			if folder.Flags == common.FData && folder.Data == uint32(dataRecord.Offset) {
+				readedFolders++
 				err = writeFile(output, header, &folder, b.Bytes())
+				ui.Current().Unpack(readedFolders, foldersNum)
 				if err != nil {
 					return err
 				}

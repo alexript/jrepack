@@ -10,6 +10,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/alexript/jrepack/ui"
 )
 
 type File struct {
@@ -111,13 +113,21 @@ func NewFile(filename string, body []byte) (*File, bool) {
 	h.Write(bs) // hash is not just sha256 of file, but sha256 of file size _and_ file data
 	h.Write(body)
 
+	hs := h.Sum(nil)
 	f := File{
 		Name:    filename,
 		Size:    l,
-		Hashsum: h.Sum(nil),
+		Hashsum: hs,
 	}
 
 	isNewHash := addFileToDirinfo(&f)
+
+	ui.Current().Hashed(ui.Hash{
+		File:      filename,
+		Size:      l,
+		Hash:      hs,
+		IsNewHash: isNewHash,
+	})
 
 	return &f, isNewHash
 }
@@ -130,9 +140,16 @@ func NewFolder(foldername string, isContainer bool) Folder {
 		i--
 	}
 
+	fname := foldername[0 : i+1]
+
+	ui.Current().NewFolder(ui.Folder{
+		IsContainer: isContainer,
+		Name:        fname,
+	})
+
 	return Folder{
 		IsContainer: isContainer,
-		Name:        foldername[0 : i+1],
+		Name:        fname,
 		Folders:     make([]*Folder, 0),
 		Files:       make([]*File, 0),
 	}

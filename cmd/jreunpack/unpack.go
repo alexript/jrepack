@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alexript/jrepack"
+	"github.com/alexript/jrepack/cmd/cmdui"
 	"github.com/alexript/jrepack/ui"
 )
 
@@ -13,12 +14,13 @@ var (
 )
 
 func main() {
-
+	ui.Set(cmdui.CommandlineUi{
+		Archivefile: inputFile,
+	})
 	err := jrepack.UnPack(inputFile, outputFolder)
 	if err != nil {
 		ui.Current().Error(fmt.Sprintf("jre unpack error: %v", err))
 		return
 	}
-	ui.Current().OnEnd("UnPacked.")
 
 }
