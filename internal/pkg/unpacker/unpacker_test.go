@@ -1,3 +1,22 @@
+// Copyright (C) 2018  Alexander Malyshev
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 package unpacker
 
 import (
@@ -10,25 +29,25 @@ import (
 )
 
 const (
-	filename_test      string = "../../../test/output/packtest.dat"
-	inputFolder_test   string = `../../../test/testdata/mixedfolder`
-	outputDirRoot_test string = "../../../test/output/unpacked"
-	outputDirName_test string = "mixedfolder"
+	filenameTest      string = "../../../test/output/packtest.dat"
+	inputFolderTest   string = `../../../test/testdata/mixedfolder`
+	outputDirRootTest string = "../../../test/output/unpacked"
+	outputDirNameTest string = "mixedfolder"
 )
 
 func prepareTestData() error {
 	dropTestData()
-	err := packer.Pack(inputFolder_test, filename_test, false)
+	err := packer.Pack(inputFolderTest, filenameTest, false)
 	return err
 }
 
 func dropTestData() {
-	f, _ := filepath.Abs(filename_test)
+	f, _ := filepath.Abs(filenameTest)
 	os.Remove(f)
 
-	root, _ := filepath.Abs(outputDirRoot_test)
+	root, _ := filepath.Abs(outputDirRootTest)
 
-	dirName := filepath.Join(root, outputDirName_test)
+	dirName := filepath.Join(root, outputDirNameTest)
 
 	common.RemoveDirReq(dirName)
 }
@@ -40,19 +59,19 @@ func TestUnpacker(T *testing.T) {
 	}
 	defer dropTestData()
 
-	err = UnPack("not_existed", outputDirRoot_test)
+	err = UnPack("not_existed", outputDirRootTest)
 	if err == nil {
 		T.Error("Accepted not existed archive")
 	}
 
-	err = UnPack(filename_test, outputDirRoot_test)
+	err = UnPack(filenameTest, outputDirRootTest)
 	if err == nil {
 		T.Error("Accepted existed target folder")
 	}
 
-	root, _ := filepath.Abs(outputDirRoot_test)
-	dirName := filepath.Join(root, outputDirName_test)
-	err = UnPack(filename_test, dirName)
+	root, _ := filepath.Abs(outputDirRootTest)
+	dirName := filepath.Join(root, outputDirNameTest)
+	err = UnPack(filenameTest, dirName)
 	if err != nil {
 		T.Fatal(err)
 	}

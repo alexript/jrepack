@@ -1,3 +1,22 @@
+// Copyright (C) 2018  Alexander Malyshev
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 package packer
 
 import (
@@ -13,6 +32,9 @@ import (
 	common "github.com/alexript/jrepack/internal/pkg/common"
 )
 
+/*
+readInputFolder is entry point of inputreader.
+*/
 func readInputFolder(inputFolder string) (*common.Dirinfo, *common.Folder, error) {
 	runtime.GC()
 	absPath, err := filepath.Abs(inputFolder)
@@ -40,6 +62,9 @@ func readInputFolder(inputFolder string) (*common.Dirinfo, *common.Folder, error
 	return common.GetDirinfo(), &rootfolder, nil
 }
 
+/*
+walkInputTree is recursive walker
+*/
 func walkInputTree(dirname string, parent *common.Folder) error {
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -55,8 +80,14 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 		fullname := filepath.Join(dirname, name)
 		if fi.IsDir() {
 			subfolder := common.NewFolder(name, false)
-			common.AddFolderToFolder(parent, &subfolder)
-			walkInputTree(fullname, &subfolder)
+			err = common.AddFolderToFolder(parent, &subfolder)
+			if err != nil {
+				return err
+			}
+			err = walkInputTree(fullname, &subfolder)
+			if err != nil {
+				return err
+			}
 		} else {
 
 			_, isContainer := common.IsContainer(fullname)
@@ -64,11 +95,14 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 			if isContainer {
 				subfolder := common.NewFolder(name, true)
 
-				err := readContainer(&subfolder, fullname)
+				err = readContainer(&subfolder, fullname)
 				if err != nil {
 					return err
 				}
-				common.AddFolderToFolder(parent, &subfolder)
+				err = common.AddFolderToFolder(parent, &subfolder)
+				if err != nil {
+					return err
+				}
 
 			} else {
 
@@ -77,7 +111,10 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 					return err
 				}
 				file, isNewHash := common.NewFile(name, fileData)
-				common.AddFileToFolder(parent, file)
+				err = common.AddFileToFolder(parent, file)
+				if err != nil {
+					return err
+				}
 				if isNewHash {
 
 					if len(fileData) > 0 {
@@ -96,6 +133,9 @@ func walkInputTree(dirname string, parent *common.Folder) error {
 	return nil
 }
 
+/*
+readContainer is recursive zip-file reader
+*/
 func readContainer(container *common.Folder, filename string) error {
 	r, err := zip.OpenReader(filename)
 	if err != nil {
@@ -122,7 +162,10 @@ func readContainer(container *common.Folder, filename string) error {
 
 		if f.FileInfo().IsDir() {
 			folder := common.NewFolder(f.Name, false)
-			common.AddFolderToFolder(container, &folder)
+			err = common.AddFolderToFolder(container, &folder)
+			if err != nil {
+				return err
+			}
 
 		} else {
 
@@ -134,7 +177,10 @@ func readContainer(container *common.Folder, filename string) error {
 			}
 			fileData := b.Bytes()
 			file, isNewHash := common.NewFile(f.Name, fileData)
-			common.AddFileToFolder(container, file)
+			err = common.AddFileToFolder(container, file)
+			if err != nil {
+				return err
+			}
 			if isNewHash {
 
 				if len(fileData) > 0 {

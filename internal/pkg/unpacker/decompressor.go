@@ -1,9 +1,27 @@
+// Copyright (C) 2018  Alexander Malyshev
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 package unpacker
 
 import (
 	"archive/zip"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +38,7 @@ const (
 	uint32max = (1 << 32) - 1
 )
 
+// GetOutputPath will transform outputdir string into disk path + path inside of archive
 func GetOutputPath(h *common.Header, outputdir string, parentid uint32) (p *string, archp *string, err error) {
 
 	if parentid < 1 {
@@ -37,7 +56,7 @@ func GetOutputPath(h *common.Header, outputdir string, parentid uint32) (p *stri
 		return nil, nil, err
 	}
 	if pdir == nil {
-		return nil, nil, errors.New(fmt.Sprintf("Unable to determine upfolder for %v", parent))
+		return nil, nil, fmt.Errorf("Unable to determine upfolder for %v", parent)
 	}
 
 	var dirname string
@@ -62,8 +81,11 @@ func GetOutputPath(h *common.Header, outputdir string, parentid uint32) (p *stri
 }
 
 var (
+	// OpenedZipFiles is the map of already opened archive files.
 	OpenedZipFiles map[string]*os.File
-	ZipWriters     map[string]*zip.Writer
+
+	// ZipWriters is the map of already opened zip writers
+	ZipWriters map[string]*zip.Writer
 )
 
 func initOpenedZipFiles() {
@@ -73,10 +95,10 @@ func initOpenedZipFiles() {
 
 func closeOpenedZipFiles() {
 	for _, writer := range ZipWriters {
-		writer.Close()
+		_ = writer.Close()
 	}
 	for _, file := range OpenedZipFiles {
-		file.Close()
+		_ = file.Close()
 	}
 }
 
@@ -141,7 +163,7 @@ func writeFile(outputdir string, header *common.Header, file *common.FolderRecor
 	}
 
 	if diskpath == nil {
-		return errors.New(fmt.Sprintf("Unable to determine folder for output. %v", file))
+		return fmt.Errorf("Unable to determine folder for output. %v", file)
 	}
 
 	if archpath == nil {
@@ -185,6 +207,7 @@ func writeFile(outputdir string, header *common.Header, file *common.FolderRecor
 	return nil
 }
 
+// Decompress is the entry point for decompressing process.
 func Decompress(header *common.Header, filename string, output string) error {
 
 	f, err := os.Open(filename)
@@ -237,12 +260,12 @@ func Decompress(header *common.Header, filename string, output string) error {
 		}
 
 	}
-	r.Close()
+	_ = r.Close()
 	b.Reset()
 
 	runtime.GC()
 	if readed != needToRead {
-		return errors.New(fmt.Sprintf("Readed: %d, Expected: %d", readed, needToRead))
+		return fmt.Errorf("Readed: %d, Expected: %d", readed, needToRead)
 	}
 
 	return nil

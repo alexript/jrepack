@@ -1,3 +1,22 @@
+// Copyright (C) 2018  Alexander Malyshev
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 package common
 
 import (
@@ -14,12 +33,15 @@ import (
 	"github.com/alexript/jrepack/ui"
 )
 
+// File is the representation of the file entity.
+// This type contains filename, filesize and hashsumm.
 type File struct {
 	Name    string `json:name`
 	Size    int    `json:size`
 	Hashsum []byte `json:hash`
 }
 
+// Folder is the representation of the disk folder OR archive.
 type Folder struct {
 	IsContainer bool      `json:isContainer`
 	Name        string    `json:name`
@@ -27,7 +49,8 @@ type Folder struct {
 	Files       []*File   `json:files`
 }
 
-type containerType struct {
+// ContainerType is the type of container
+type ContainerType struct {
 	Name      string `json:name`
 	Extension string `json:ext`
 }
@@ -37,7 +60,10 @@ const (
 	jarExt = ".jar"
 )
 
+// Offset is the file hashes by 4 bytes of file offset in _uncompressed_ data array.
 type Offset map[uint32][]byte
+
+// Dirinfo is the hash to files map, used as basic structure for output file header.
 type Dirinfo map[string][]*File
 
 func (di Dirinfo) String() string {
@@ -56,14 +82,15 @@ func (o Offset) String() string {
 }
 
 var (
-	zip            = containerType{Name: "zip file", Extension: zipExt}
-	jar            = containerType{Name: "jar file", Extension: jarExt}
-	containerTypes = []containerType{zip, jar}
+	zip            = ContainerType{Name: "zip file", Extension: zipExt}
+	jar            = ContainerType{Name: "jar file", Extension: jarExt}
+	containerTypes = []ContainerType{zip, jar}
 	dirinfo        = make(Dirinfo)
 	offsets        = make(Offset)
 )
 
-func IsContainer(filename string) (*containerType, bool) {
+// IsContainer check file name for .zip or .jar extensions
+func IsContainer(filename string) (*ContainerType, bool) {
 
 	ext := path.Ext(filename)
 	for _, v := range containerTypes {
@@ -74,19 +101,23 @@ func IsContainer(filename string) (*containerType, bool) {
 	return nil, false
 }
 
+// ClearDirinfo is for Dirinfo and Offset maps reset.
 func ClearDirinfo() {
 	dirinfo = make(Dirinfo)
 	offsets = make(Offset)
 }
 
+// GetDirinfo will return current state of the DirInfo object
 func GetDirinfo() *Dirinfo {
 	return &dirinfo
 }
 
+// GetOffsets will return current state of the Offsets object
 func GetOffsets() *Offset {
 	return &offsets
 }
 
+// SetOffset apply hash to the data offset value.
 func SetOffset(offset uint32, hash []byte) {
 	offsets[offset] = hash
 }
@@ -104,6 +135,7 @@ func addFileToDirinfo(f *File) bool {
 	return isNewHash
 }
 
+// NewFile will create new File object
 func NewFile(filename string, body []byte) (*File, bool) {
 	l := len(body)
 	bs := []byte(strconv.Itoa(l))
@@ -132,6 +164,7 @@ func NewFile(filename string, body []byte) (*File, bool) {
 	return &f, isNewHash
 }
 
+// NewFolder will create new Folder object.
 func NewFolder(foldername string, isContainer bool) Folder {
 
 	i := len(foldername) - 1
@@ -155,6 +188,7 @@ func NewFolder(foldername string, isContainer bool) Folder {
 	}
 }
 
+// Foldernode is the interface, defined is the object has subfolder with the given name.
 type Foldernode interface {
 	HasFolder(name string) (*Folder, error)
 }
@@ -169,6 +203,7 @@ func findFolder(folders []*Folder, name string) (*Folder, error) {
 	return nil, nil
 }
 
+// HasFolder will search for subfolder name in the given folder.
 func (fold *Folder) HasFolder(name string) (*Folder, error) {
 	if fold == nil {
 		return nil, errors.New("nil folder while search for " + name)
@@ -182,6 +217,7 @@ func (fold *Folder) HasFolder(name string) (*Folder, error) {
 
 }
 
+// MkdirAll will create subfolders (if required) in the given folder.
 func MkdirAll(fold *Folder, somepath string) (f *Folder, err error) {
 	l := len(somepath)
 	i := 0
@@ -221,6 +257,7 @@ func MkdirAll(fold *Folder, somepath string) (f *Folder, err error) {
 	return MkdirAll(childfolder, somepath[i:])
 }
 
+// AddFileToFolder will add File object to Folder object
 func AddFileToFolder(fold *Folder, f *File) error {
 	if fold == nil {
 		return errors.New("Folder is nil")
@@ -246,6 +283,7 @@ func AddFileToFolder(fold *Folder, f *File) error {
 	return nil
 }
 
+// AddFolderToFolder will add subfolder Folder object into Folder object
 func AddFolderToFolder(dest *Folder, src *Folder) error {
 	if dest == nil {
 		return errors.New("Destination folder is nil")

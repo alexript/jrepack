@@ -1,3 +1,36 @@
+// Copyright (C) 2018  Alexander Malyshev
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+/*
+Package jrepack will pack and unpack several JRE folders.
+Compression and decompression is LZMA level 8
+
+While compress, all similar files (same size and hash summ), except one, are dropped.
+
+While uncompress, all similar files are restored by excepted one.
+
+All *.jre and *.zip files also are read while packing and their similar content
+also cleans from double files.
+
+On uncompress, *.jre and *.zip files are created from scratch and their content
+are created.
+*/
 package jrepack
 
 import (
@@ -5,10 +38,16 @@ import (
 	"github.com/alexript/jrepack/internal/pkg/unpacker"
 )
 
+/*
+Pack is the only function for compressing.
+*/
 func Pack(inputFolder, outputFile string, dumpheader bool) error {
 	return packer.Pack(inputFolder, outputFile, dumpheader)
 }
 
+/*
+UnPack is the only function for uncompressing.
+*/
 func UnPack(inputFile, outputFolder string) error {
 	return unpacker.UnPack(inputFile, outputFolder)
 }
