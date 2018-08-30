@@ -36,23 +36,23 @@ import (
 // File is the representation of the file entity.
 // This type contains filename, filesize and hashsumm.
 type File struct {
-	Name    string `json:name`
-	Size    int    `json:size`
-	Hashsum []byte `json:hash`
+	Name    string `json:"name"`
+	Size    int    `json:"size"`
+	Hashsum []byte `json:"hash"`
 }
 
 // Folder is the representation of the disk folder OR archive.
 type Folder struct {
-	IsContainer bool      `json:isContainer`
-	Name        string    `json:name`
-	Folders     []*Folder `json:folders`
-	Files       []*File   `json:files`
+	IsContainer bool      `json:"isContainer"`
+	Name        string    `json:"name"`
+	Folders     []*Folder `json:"folders"`
+	Files       []*File   `json:"files"`
 }
 
 // ContainerType is the type of container
 type ContainerType struct {
-	Name      string `json:name`
-	Extension string `json:ext`
+	Name      string `json:"name"`
+	Extension string `json:"ext"`
 }
 
 const (

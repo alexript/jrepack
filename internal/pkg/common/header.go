@@ -56,11 +56,11 @@ func getFlags(f *Folder) uint8 {
 
 // FolderRecord is the type for folder representation in archive header.
 type FolderRecord struct {
-	Parent     uint32 `json:parentId`
-	Flags      uint8  `json:flags`
-	Data       uint32 `json:dataId`
-	Namelength uint8  `json:namelen`
-	Name       []byte `json:name`
+	Parent     uint32 `json:"parentId"`
+	Flags      uint8  `json:"flags"`
+	Data       uint32 `json:"dataId"`
+	Namelength uint8  `json:"namelen"`
+	Name       []byte `json:"name"`
 }
 
 // FoldersHeader is the array of the FolderRecord objects
@@ -68,9 +68,9 @@ type FoldersHeader []FolderRecord
 
 // DataRecord is the type for file representation in archive header.
 type DataRecord struct {
-	Offset uint32 `json:offset`
-	Size   uint32 `json:size`
-	Hash   []byte `json:hash`
+	Offset uint32 `json:"offset"`
+	Size   uint32 `json:"size"`
+	Hash   []byte `json:"hash"`
 }
 
 // DataHeader is the array of the pointers to the DataRecord objects.
@@ -78,9 +78,9 @@ type DataHeader []*DataRecord
 
 // Header is the structure of the archive header information.
 type Header struct {
-	Folders FoldersHeader `json:folders`
-	Data    DataHeader    `json:data`
-	Size    uint32        `json:datasize`
+	Folders FoldersHeader `json:"folders"`
+	Data    DataHeader    `json:"data"`
+	Size    uint32        `json:"datasize"`
 }
 
 func (h Header) String() string {
