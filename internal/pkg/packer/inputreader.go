@@ -21,9 +21,7 @@ package packer
 
 import (
 	"archive/zip"
-	"bytes"
 	"errors"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -169,13 +167,12 @@ func readContainer(container *common.Folder, filename string) error {
 
 		} else {
 
-			var b bytes.Buffer
+			fileData, err := ioutil.ReadAll(rc)
 
-			_, err = io.Copy(&b, rc)
 			if err != nil {
 				return err
 			}
-			fileData := b.Bytes()
+
 			file, isNewHash := common.NewFile(f.Name, fileData)
 			err = common.AddFileToFolder(container, file)
 			if err != nil {
