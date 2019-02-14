@@ -21,17 +21,17 @@ rem THE SOFTWARE.
 
 
 echo -- Generators
-vgo generate .\...
+go generate .\...
 echo -- Start tests
-vgo test -coverprofile=cover.out .\... 
+go test -coverprofile=cover.out .\... 
 
 if errorlevel 1 (
 	echo -- Tests Failed
 	exit /b %errorlevel%
 )
 echo -- Building
-vgo install
-vgo install .\cmd\...
+go install
+go install .\cmd\...
 echo -- Done.
 rem vgo tool cover -func=cover.out
 rem vgo tool cover -html=cover.out
